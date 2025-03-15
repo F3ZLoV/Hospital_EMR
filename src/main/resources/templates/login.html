@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Otolaryngology EMR System</title>
+    <style>
+        body {
+            margin: 0; padding: 0;
+            font-family: sans-serif;
+            background-color: #f9f9f9;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            height: 100vh;
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        .login-box {
+            background-color: #fff;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            width: 300px;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .login-box label {
+            display: block;
+            margin-top: 10px;
+        }
+        .login-box input {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            box-sizing: border-box;
+        }
+        .login-box button {
+            margin-top: 15px;
+            width: 100%;
+            padding: 10px;
+            background-color: #333;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            border-radius: 4px;
+        }
+        .login-box button:hover {
+            background-color: #555;
+        }
+        /* 에러 메시지 */
+        .error {
+            color: red;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+<h1>Otolaryngology EMR System</h1>
+<div class="login-box">
+    <form th:action="@{/login}" method="post">
+        <input type="text" id="username" name="username" placeholder="Enter your ID" required>
+
+        <input type="password" id="password" name="password" placeholder="Enter your password" required>
+
+        <button type="submit">login</button>
+    </form>
+
+    <!-- 에러 메시지 표시 (로그인 실패 시) -->
+    <p th:if="${param.error}" class="error">
+        Invalid username or password!
+    </p>
+</div>
+</body>
+</html>

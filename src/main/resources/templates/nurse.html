@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>이비인후과 EMR - 간호사 메인화면</title>
+    <link rel="stylesheet" th:href="@{/css/nurse_style.css}" />
+</head>
+<body>
+<div class="header">
+    <div class="left-section">
+        <span class="greeting">반갑습니다. 홍길동 님</span>
+        <button>오늘의 현황</button>
+        <button>진료실</button>
+    </div>
+    <div class="center-section">
+        <input class="search-bar" type="text" placeholder="환자검색/이름/환자등록번호/생년월일/휴대폰번호">
+    </div>
+    <div class="right-section">
+        <span class="time-info" id="timeInfo">00:00:00</span>
+        <button class="chat-button" id="chatButton">&#128172;</button>
+    </div>
+</div>
+
+<div class="container">
+    <div class="sidebar">
+        <div class="profile-banner">
+            <div class="profile-top">
+                <img src="https://via.placeholder.com/40" alt="Profile Picture" class="profile-pic">
+                <div class="profile-name">홍길동(간호사)</div>
+            </div>
+            <div class="profile-stats">
+                <span class="status-label">대기</span>
+                <span class="status-number">5명</span>
+                <span class="status-separator">|</span>
+                <span class="status-label">오늘 수납</span>
+                <span class="status-number">3명</span>
+            </div>
+        </div>
+
+        <div class="waiting-patient-list">
+            <div class="list-header">
+                <h3>접수 대기 환자 리스트</h3>
+                <select id="sortSelect" onchange="sortList()">
+                    <option value="asc">오름차순</option>
+                    <option value="desc">내림차순</option>
+                </select>
+            </div>
+            <div class="list-container">
+                <ul id="patientList">
+                    <li>홍길동</li>
+                    <li>김철수</li>
+                    <li>이영희</li>
+                    <li>박민수</li>
+                    <li>최지우</li>
+                    <li>김영희</li>
+                    <li>이수민</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <button id="openModalBtn" class="new-patient-btn">신규 환자 등록</button>
+    </div>
+
+    <div class="right-banner">
+        <div class="calendar-banner">
+            <button id="prevMonthBtn" title="이전 달">&#9664;</button>
+            <span id="calendarMonth">2025.03</span>
+            <button id="nextMonthBtn" title="다음 달">&#9654;</button>
+            <div class="today-date" id="todayDate">오늘: 2025.03.13</div>
+        </div>
+        <table class="month-view" id="monthView">
+            <thead>
+            <tr>
+                <th>일</th>
+                <th>월</th>
+                <th>화</th>
+                <th>수</th>
+                <th>목</th>
+                <th>금</th>
+                <th>토</th>
+            </tr>
+            </thead>
+            <tbody id="calendarBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<div id="patientModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h3>신규 환자 등록</h3>
+        <!-- 결과 메시지를 표시할 영역 -->
+        <div id="formMessage" style="margin-bottom:10px; text-align:center;"></div>
+
+        <!-- 테이블 레이아웃을 사용한 폼 -->
+        <form id="patientForm" th:action="@{/patient}" method="post">
+            <table>
+                <tr>
+                    <td><label for="name">이름:</label></td>
+                    <td><input type="text" id="name" name="name" required></td>
+                    <td><label for="date_of_birth">생년월일:</label></td>
+                    <td><input type="date" id="date_of_birth" name="date_of_birth" required></td>
+                </tr>
+                <tr>
+                    <td><label for="gender">성별:</label></td>
+                    <td>
+                        <select id="gender" name="gender" required>
+                            <option value="">선택</option>
+                            <option value="남">남</option>
+                            <option value="여">여</option>
+                        </select>
+                    </td>
+                    <td><label for="phone_number">전화번호:</label></td>
+                    <td><input type="text" id="phone_number" name="phone_number" required></td>
+                </tr>
+                <tr>
+                    <td><label for="email">이메일:</label></td>
+                    <td><input type="email" id="email" name="email" required></td>
+                    <td><label for="address">주소:</label></td>
+                    <td><input type="text" id="address" name="address" required></td>
+                </tr>
+                <tr>
+                    <td colspan="4" style="text-align: center; padding-top:10px;">
+                        <button type="submit">등록</button>
+                    </td>
+                </tr>
+            </table>
+        </form>
+    </div>
+</div>
+
+
+
+<script>
+    function updateTime() {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const date = String(now.getDate()).padStart(2, '0');
+        const dayNames = ["일", "월", "화", "수", "목", "금", "토"];
+        const dayOfWeek = dayNames[now.getDay()];
+        let hour = now.getHours();
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const seconds = String(now.getSeconds()).padStart(2, '0');
+        const ampm = hour < 12 ? "오전" : "오후";
+        hour = hour % 12;
+        hour = hour === 0 ? 12 : hour;
+        const hourStr = String(hour).padStart(2, '0');
+        const timeString = `${year}.${month}.${date} ${dayOfWeek} ${ampm} ${hourStr}:${minutes}:${seconds}`;
+        document.getElementById('timeInfo').textContent = timeString;
+    }
+    setInterval(updateTime, 1000);
+    document.getElementById('chatButton').addEventListener('click', function() {
+        alert("채팅 기능은 추후 구현 예정입니다!");
+    });
+    function sortList() {
+        const select = document.getElementById('sortSelect');
+        const order = select.value;
+        const list = document.getElementById('patientList');
+        let items = Array.from(list.getElementsByTagName('li'));
+        items.sort((a, b) => {
+            const nameA = a.textContent.trim();
+            const nameB = b.textContent.trim();
+            return order === 'asc'
+                ? nameA.localeCompare(nameB, 'ko')
+                : nameB.localeCompare(nameA, 'ko');
+        });
+        list.innerHTML = "";
+        items.forEach(item => list.appendChild(item));
+    }
+
+    // modal
+    var modal = document.getElementById("patientModal");
+    var openModalBtn = document.getElementById("openModalBtn");
+    var closeBtn = document.getElementsByClassName("close")[0];
+    openModalBtn.onclick = function() {
+        modal.style.display = "block";
+    }
+    closeBtn.onclick = function() {
+        modal.style.display = "none";
+    }
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            modal.style.display = "none";
+        }
+    }
+
+    // 캘린더 스크립트 (기존 코드 유지)
+    let currentDate = new Date();
+    currentDate.setDate(1);
+    function updateCalendarBanner() {
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+        const monthStr = String(month + 1).padStart(2, '0');
+        document.getElementById('calendarMonth').textContent = `${year}.${monthStr}`;
+        const today = new Date();
+        const tYear = today.getFullYear();
+        const tMonth = String(today.getMonth() + 1).padStart(2, '0');
+        const tDate = String(today.getDate()).padStart(2, '0');
+        document.getElementById('todayDate').textContent = `오늘: ${tYear}.${tMonth}.${tDate}`;
+    }
+    function renderMonthView() {
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+        const firstDay = new Date(year, month, 1).getDay();
+        const lastDate = new Date(year, month + 1, 0).getDate();
+        const prevLastDate = new Date(year, month, 0).getDate();
+        const calendarBody = document.getElementById('calendarBody');
+        calendarBody.innerHTML = "";
+        const today = new Date();
+        const isThisMonth = (today.getFullYear() === year && today.getMonth() === month);
+        const todayDate = today.getDate();
+        let row = document.createElement('tr');
+        let cellCount = 0;
+        for (let i = 0; i < firstDay; i++) {
+            const cell = document.createElement('td');
+            const dayNum = prevLastDate - (firstDay - 1) + i;
+            cell.textContent = dayNum;
+            cell.classList.add('other-month');
+            row.appendChild(cell);
+            cellCount++;
+        }
+        for (let date = 1; date <= lastDate; date++) {
+            const cell = document.createElement('td');
+            cell.innerHTML = `<button class="day-btn">${date}</button>`;
+            if (isThisMonth && date === todayDate) {
+                cell.classList.add('today');
+            }
+            row.appendChild(cell);
+            cellCount++;
+            if (cellCount % 7 === 0) {
+                calendarBody.appendChild(row);
+                row = document.createElement('tr');
+            }
+        }
+        let nextDate = 1;
+        while (cellCount % 7 !== 0) {
+            const cell = document.createElement('td');
+            cell.textContent = nextDate;
+            cell.classList.add('other-month');
+            row.appendChild(cell);
+            cellCount++;
+            nextDate++;
+        }
+        if (row.children.length > 0) {
+            calendarBody.appendChild(row);
+        }
+    }
+    document.getElementById('prevMonthBtn').addEventListener('click', () => {
+        currentDate.setMonth(currentDate.getMonth() - 1);
+        updateCalendarBanner();
+        renderMonthView();
+    });
+    document.getElementById('nextMonthBtn').addEventListener('click', () => {
+        currentDate.setMonth(currentDate.getMonth() + 1);
+        updateCalendarBanner();
+        renderMonthView();
+    });
+    updateCalendarBanner();
+    renderMonthView();
+</script>
+<script>
+    // AJAX 폼 제출 처리
+    const patientForm = document.getElementById("patientForm");
+    const formMessage = document.getElementById("formMessage");
+
+    patientForm.addEventListener("submit", function(e) {
+        e.preventDefault(); // 기본 폼 제출 막기
+
+        // 폼 데이터를 FormData 객체로 생성
+        const formData = new FormData(patientForm);
+
+        // fetch API로 POST 요청 전송
+        fetch(patientForm.action, {
+            method: "POST",
+            body: formData
+        })
+            .then(response => {
+                if(!response.ok) {
+                    throw new Error("네트워크 오류");
+                }
+                return response.json();
+            })
+            .then(data => {
+                if(data.success) {
+                    formMessage.style.color = "green";
+                    formMessage.textContent = data.message;
+                    // 성공 후 일정 시간(예: 2초) 후 모달 닫기 및 폼 리셋
+                    setTimeout(() => {
+                        modal.style.display = "none";
+                        patientForm.reset();
+                        formMessage.textContent = "";
+                    }, 2000);
+                } else {
+                    formMessage.style.color = "red";
+                    formMessage.textContent = data.message;
+                }
+            })
+            .catch(error => {
+                formMessage.style.color = "red";
+                formMessage.textContent = "환자등록에 실패하였습니다.";
+                console.error("Error:", error);
+            });
+    });
+</script>
+
+</body>
+</html>

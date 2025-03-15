@@ -5,6 +5,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 
+import java.time.LocalDate;
+
 @Entity
 public class Patient {
 
@@ -13,14 +15,25 @@ public class Patient {
     private Long id;
 
     private String name;
-    private String phoneNumber;
+    private LocalDate date_of_birth;
+    private String gender;
+    private String phone_number;
+    private String email;
+    private String address;
 
     public Patient() {}
 
-    public Patient(String name, String phoneNumber) {
+    public Patient(String name, String phone_number) {
         this.name = name;
-        this.phoneNumber = phoneNumber;
+        this.date_of_birth = date_of_birth;
+        this.gender = gender;
+        this.phone_number = phone_number;
+        this.email = email;
+        this.address = address;
     }
+
+
+    // getters and setters
 
     public Long getId() {
         return id;
@@ -38,12 +51,43 @@ public class Patient {
         this.name = name;
     }
 
-    public String getPhoneNumber() {
-        return phoneNumber;
+    public LocalDate getDate_of_birth() {
+        return date_of_birth;
     }
 
-    public void setPhoneNumber(String phoneNumber) {
-        this.phoneNumber = phoneNumber;
+    public void setDate_of_birth(LocalDate dateOfBirth) {
+        this.date_of_birth = dateOfBirth;
     }
 
+    public String getGender() {
+        return gender;
+    }
+
+    public void setGender(String gender) {
+        this.gender = gender;
+    }
+
+    public String getPhone_number() {
+        return phone_number;
+    }
+
+    public void setPhone_number(String phoneNumber) {
+        this.phone_number = phoneNumber;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
 }
