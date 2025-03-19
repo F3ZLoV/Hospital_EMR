@@ -13,7 +13,7 @@
         <button>진료실</button>
     </div>
     <div class="center-section">
-        <input class="search-bar" type="text" placeholder="환자검색/이름/환자등록번호/생년월일/휴대폰번호">
+        <input id="topSearchBar" class="search-bar" type="text" placeholder="환자검색/이름/환자등록번호/생년월일/휴대폰번호">
     </div>
     <div class="right-section">
         <span class="time-info" id="timeInfo">00:00:00</span>
@@ -130,7 +130,13 @@
         </form>
     </div>
 </div>
-
+<div id="searchResultModal" class="modal">
+    <div class="modal-content">
+        <span class="close" id="closeSearchModal">&times;</span>
+        <h3>검색 결과</h3>
+        <div id="searchResultContainer"></div>
+    </div>
+</div>
 
 
 <script>
@@ -304,6 +310,50 @@
                 console.error("Error:", error);
             });
     });
+</script>
+<script>
+    const searchBar = document.getElementById("topSearchBar");
+    searchBar.addEventListener("keypress", function(event) {
+        if (event.key === "Enter") {
+            event.preventDefault(); // 폼 submit 방지
+            const keyword = searchBar.value.trim();
+            if (!keyword) {
+                alert("검색어를 입력하세요.");
+                return;
+            }
+            // AJAX GET 요청
+            fetch(`/patient/search?keyword=${encodeURIComponent(keyword)}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("네트워크 오류");
+                    }
+                    return response.text(); // 서버에서 HTML 조각을 반환한다고 가정
+                })
+                .then(html => {
+                    // 검색 결과 HTML을 모달 내부에 삽입
+                    document.getElementById("searchResultContainer").innerHTML = html;
+                    // 모달 열기
+                    document.getElementById("searchResultModal").style.display = "block";
+                })
+                .catch(error => {
+                    console.error("검색 실패:", error);
+                    alert("검색 결과를 불러오는 데 실패했습니다.");
+                });
+        }
+    });
+
+    const searchResultModal = document.getElementById("searchResultModal");
+    const closeSearchModal = document.getElementById("closeSearchModal");
+
+    closeSearchModal.onclick = function() {
+        searchResultModal.style.display = "none";
+    };
+
+    window.onclick = function(event) {
+        if (event.target === searchResultModal) {
+            searchResultModal.style.display = "none";
+        }
+    };
 </script>
 
 </body>

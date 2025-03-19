@@ -2,6 +2,7 @@ package com.example.hospitalemr.controller;
 
 import com.example.hospitalemr.domain.Patient;
 import com.example.hospitalemr.repository.PatientRepository;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
@@ -10,6 +11,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/patient")
@@ -43,11 +45,22 @@ public class PatientController {
         return result;
     }
 
-    // 환자 단건 조회
-    @GetMapping("/{id}")
-    public Patient getPatientById(@PathVariable Long id) {
-        return patientRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("환자를 찾을 수 없습니다. id=" + id));
+    @GetMapping("/search")
+    public String searchPatients(@RequestParam String keyword, Model model) {
+        List<Patient> allPatients = patientRepository.findAll();
+
+        List<Patient> filtered = allPatients.stream()
+                .filter(p -> {
+                    if (p.getName() != null && p.getName().contains(keyword)) return true;
+                    if (p.getDate_of_birth() != null &&
+                            p.getDate_of_birth().toString().contains(keyword)) return true;
+                    if (p.getPhone_number() != null && p.getPhone_number().contains(keyword)) return true;
+                    return false;
+                })
+                .collect(Collectors.toList());
+
+        model.addAttribute("patients", filtered);
+        return "search_result :: resultFragment";
     }
 
     // 환자 정보 수정

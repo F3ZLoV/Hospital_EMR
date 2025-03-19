@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<div th:fragment="resultFragment">
+    <div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;">
+        <div th:each="patient : ${patients}" style="border: 1px solid #ccc; border-radius: 4px; padding: 10px; width: 220px; background: #f9f9f9;">
+            <h4 th:text="${patient.name}">이름</h4>
+            <p>
+                <strong>생년월일:</strong>
+                <span th:text="${patient.date_of_birth}"></span>
+            </p>
+            <p>
+                <strong>전화번호:</strong>
+                <span th:text="${patient.phone_number}"></span>
+            </p>
+            <p>
+                <strong>이메일:</strong>
+                <span th:text="${patient.email}"></span>
+            </p>
+            <p>
+                <strong>주소:</strong>
+                <span th:text="${patient.address}"></span>
+            </p>
+        </div>
+    </div>
+</div>
+</body>
+</html>

@@ -1,9 +1,6 @@
 package com.example.hospitalemr.domain;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 
 import java.time.LocalDate;
 
@@ -12,12 +9,19 @@ public class Patient {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "patient_id")
     private Long id;
 
     private String name;
+
+    @Column(name = "date_of_birth")
     private LocalDate date_of_birth;
+
     private String gender;
+
+    @Column(name = "phone_number")
     private String phone_number;
+
     private String email;
     private String address;
 

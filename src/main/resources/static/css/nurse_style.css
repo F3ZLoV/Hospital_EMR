@@ -348,7 +348,12 @@ body {
     white-space: nowrap;
     padding: 5px;
 }
-
+.modal-content .close {
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
 
 /* 닫기 버튼 */
 .close {
