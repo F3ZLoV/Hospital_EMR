@@ -47,13 +47,6 @@
             </div>
             <div class="list-container">
                 <ul id="patientList">
-                    <li>홍길동</li>
-                    <li>김철수</li>
-                    <li>이영희</li>
-                    <li>박민수</li>
-                    <li>최지우</li>
-                    <li>김영희</li>
-                    <li>이수민</li>
                 </ul>
             </div>
         </div>
@@ -91,10 +84,8 @@
     <div class="modal-content">
         <span class="close">&times;</span>
         <h3>신규 환자 등록</h3>
-        <!-- 결과 메시지를 표시할 영역 -->
         <div id="formMessage" style="margin-bottom:10px; text-align:center;"></div>
 
-        <!-- 테이블 레이아웃을 사용한 폼 -->
         <form id="patientForm" th:action="@{/patient}" method="post">
             <table>
                 <tr>
@@ -354,7 +345,56 @@
             searchResultModal.style.display = "none";
         }
     };
+
 </script>
 
+<script>
+
+    // 환자 카드 접수 버튼 처리
+    document.getElementById('searchResultContainer').addEventListener('click', function (e) {
+        if (e.target && e.target.classList.contains('register-btn')) {
+            const patientId = e.target.getAttribute('data-id');
+            // AJAX POST
+            fetch('/patient/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: 'patientId=' + encodeURIComponent(patientId)
+            })
+                .then(response => {
+                    if(!response.ok) throw new Error("Network reponse was not ok");
+                    return response.json();
+                })
+                .then(data => {
+                    if(data.success) {
+                        alert("환자가 접수 대기 리스트에 추가되었습니다.");
+                        refreshWaitingList();
+                    } else {
+                        alert("환자 접수에 실패했습니다.");
+                    }
+                })
+                .catch(error => {
+                    console.error("Error:",error);
+                    alert("환자 접수 중 오류 발생");
+                });
+        }
+
+    })
+
+    function refreshWaitingList() {
+        fetch('/patient/waiting')
+            .then(response => {
+                if(!response.ok) throw new Error("네트워크 응답 오류");
+                return response.text();
+            })
+            .then(html => {
+                document.getElementById("patientList").innerHTML = html;
+            })
+            .catch(error => {
+                console.error("대기 환자 리스트 갱신 중 오류 발생:", error);
+            });
+    }
+</script>
 </body>
 </html>

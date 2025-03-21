@@ -37,10 +37,25 @@ public class PatientController {
         try {
             patientRepository.save(patient);
             result.put("success", true);
-            result.put("message", "환자등록에 성공하였습니다.");
+            result.put("message", "환자 등록에 성공하였습니다.");
         } catch (Exception e) {
             result.put("success", false);
-            result.put("message", "환자등록에 실패하였습니다.");
+            result.put("message", "환자 등록에 실패하였습니다.");
+        }
+        return result;
+    }
+
+    //환자 접수
+    @PostMapping("/register")
+    @ResponseBody
+    public Map<String, Object> registerPatient(@RequestParam Long patientId) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            result.put("success", true);
+            result.put("message", "환자 접수에 성공하였습니다.");
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("message", "환자 접수에 실패하였습니다.");
         }
         return result;
     }
