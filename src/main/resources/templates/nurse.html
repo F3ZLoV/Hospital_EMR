@@ -30,10 +30,10 @@
             </div>
             <div class="profile-stats">
                 <span class="status-label">대기</span>
-                <span class="status-number">5명</span>
+                <span id="waitingCount" class="status-number">0명</span>
                 <span class="status-separator">|</span>
                 <span class="status-label">오늘 수납</span>
-                <span class="status-number">3명</span>
+                <span id="collectionCount" class="status-number">0명</span>
             </div>
         </div>
 
@@ -128,7 +128,15 @@
         <div id="searchResultContainer"></div>
     </div>
 </div>
-
+<div id="confirmModal" class="modal">
+    <div class="modal-content" style="text-align: center;">
+        <span class="close" id="closeConfirmModal">&times;</span>
+        <h3>삭제 확인</h3>
+        <p>해당 환자를 대기 리스트에서 제거하시겠습니까?</p>
+        <button id="confirmYesBtn">&nbsp;&nbsp;&nbsp;예&nbsp;&nbsp;&nbsp;</button>
+        <button id="confirmNoBtn">아니오</button>
+    </div>
+</div>
 
 <script>
     function updateTime() {
@@ -350,11 +358,11 @@
 
 <script>
 
-    // 환자 카드 접수 버튼 처리
-    document.getElementById('searchResultContainer').addEventListener('click', function (e) {
+    // 환자 카드 접수 버튼 처리 (검색 결과 모달 내)
+    document.getElementById('searchResultContainer').addEventListener('click', function(e) {
         if (e.target && e.target.classList.contains('register-btn')) {
             const patientId = e.target.getAttribute('data-id');
-            // AJAX POST
+            // AJAX POST 요청: 환자 접수 처리
             fetch('/patient/register', {
                 method: 'POST',
                 headers: {
@@ -363,24 +371,24 @@
                 body: 'patientId=' + encodeURIComponent(patientId)
             })
                 .then(response => {
-                    if(!response.ok) throw new Error("Network reponse was not ok");
+                    if (!response.ok) throw new Error("Network response was not ok");
                     return response.json();
                 })
                 .then(data => {
+                    // alert로 응답 메시지 표시
+                    alert(data.message);
+                    // 성공 시에만 모달 닫고 대기 리스트 갱신
                     if(data.success) {
-                        alert("환자가 접수 대기 리스트에 추가되었습니다.");
+                        document.getElementById("searchResultModal").style.display = "none";
                         refreshWaitingList();
-                    } else {
-                        alert("환자 접수에 실패했습니다.");
                     }
                 })
                 .catch(error => {
-                    console.error("Error:",error);
+                    console.error("Error:", error);
                     alert("환자 접수 중 오류 발생");
                 });
         }
-
-    })
+    });
 
     function refreshWaitingList() {
         fetch('/patient/waiting')
@@ -395,6 +403,87 @@
                 console.error("대기 환자 리스트 갱신 중 오류 발생:", error);
             });
     }
+
+    // 전역 변수에 삭제할 환자 ID 저장
+    let deletePatientId = null;
+
+    // 삭제 버튼 클릭 이벤트 처리 (대기 리스트 내)
+    document.getElementById('patientList').addEventListener('click', function(e) {
+        if (e.target && e.target.classList.contains('delete-btn')) {
+            deletePatientId = e.target.getAttribute('data-id');
+            // 확인 모달 열기
+            document.getElementById("confirmModal").style.display = "block";
+        }
+    });
+
+    // 확인 모달 닫기 처리
+    document.getElementById("closeConfirmModal").onclick = function() {
+        document.getElementById("confirmModal").style.display = "none";
+    };
+
+    // "아니오" 버튼 처리
+    document.getElementById("confirmNoBtn").onclick = function() {
+        document.getElementById("confirmModal").style.display = "none";
+        deletePatientId = null;
+    };
+
+    // "예" 버튼 처리: 실제로 환자 삭제 (대기 리스트에서 제거)
+    document.getElementById("confirmYesBtn").onclick = function() {
+        if (deletePatientId) {
+            fetch('/patient/waiting/remove', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: 'patientId=' + encodeURIComponent(deletePatientId)
+            })
+                .then(response => {
+                    if (!response.ok) throw new Error("Network response was not ok");
+                    return response.json();
+                })
+                .then(data => {
+                    if(data.success) {
+                        alert("대기 리스트에서 제거되었습니다.");
+                        refreshWaitingList();
+                    } else {
+                        alert("대기 리스트에서 제거에 실패했습니다.");
+                    }
+                })
+                .catch(error => {
+                    console.error("Error:", error);
+                    alert("대기 리스트에서 제거 중 오류 발생");
+                })
+                .finally(() => {
+                    // 확인 모달 닫기 및 변수 초기화
+                    document.getElementById("confirmModal").style.display = "none";
+                    deletePatientId = null;
+                });
+        }
+    };
+
+    setInterval(() => {
+        refreshWaitingList();
+    }, 5000); // 5초
+
+    function refreshStats() {
+        fetch('/patient/stats')
+            .then(response => {
+                if (!response.ok) throw new Error("네트워크 응답 오류");
+                return response.json();
+            })
+            .then(data => {
+                document.getElementById('waitingCount').innerText = data.waitingCount + "명";
+                document.getElementById('collectionCount').innerText = data.collectionCount + "명";
+            })
+            .catch(error => {
+                console.error("Stats refresh error:", error);
+            });
+    }
+
+    // 페이지 로드 시 및 5초 간격으로 업데이트
+    refreshStats();
+    setInterval(refreshStats, 5000);
+
 </script>
 </body>
 </html>

@@ -3,6 +3,7 @@ package com.example.hospitalemr.domain;
 import jakarta.persistence.*;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 public class Patient {
@@ -25,6 +26,12 @@ public class Patient {
     private String email;
     private String address;
 
+    private boolean waiting = true; // 환자 대기 여부 (true = 대기중)
+
+    @Column(name = "reception_time", columnDefinition = "TIMESTAMP DEFAULT NULL")
+    private LocalDateTime receptionTime;
+
+
     public Patient() {}
 
     public Patient(String name, String phone_number) {
@@ -34,6 +41,7 @@ public class Patient {
         this.phone_number = phone_number;
         this.email = email;
         this.address = address;
+        this.waiting = true;
     }
 
 
@@ -93,5 +101,20 @@ public class Patient {
 
     public void setAddress(String address) {
         this.address = address;
+    }
+
+    public boolean isWaiting() {
+        return waiting;
+    }
+    public void setWaiting(boolean waiting) {
+        this.waiting = waiting;
+    }
+
+    public LocalDateTime getReceptionTime() {
+        return receptionTime;
+    }
+
+    public void setReceptionTime(LocalDateTime receptionTime) {
+        this.receptionTime = receptionTime;
     }
 }

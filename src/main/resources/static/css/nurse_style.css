@@ -384,3 +384,14 @@ body {
 .modal-content label {
     margin-right: 4px;
 }
+
+#confirmYesBtn, #confirmNoBtn {
+    padding: 12px 20px; /* 위아래 여백을 조금 늘림 */
+    font-size: 1.1em;   /* 글씨 크기를 약간 키움 */
+}
+
+.waiting-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
