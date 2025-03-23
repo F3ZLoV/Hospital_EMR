@@ -54,6 +54,7 @@
 
     <div class="main-content">
         <button id="openModalBtn" class="new-patient-btn">신규 환자 등록</button>
+        <button id="openAppointmentListModalBtn" class="new-patient-btn">진료 예약 목록</button>
     </div>
 
     <div class="right-banner">
@@ -121,6 +122,7 @@
         </form>
     </div>
 </div>
+<!-- 환자 검색 결과 모달창 -->
 <div id="searchResultModal" class="modal">
     <div class="modal-content">
         <span class="close" id="closeSearchModal">&times;</span>
@@ -128,6 +130,7 @@
         <div id="searchResultContainer"></div>
     </div>
 </div>
+<!-- 대기리스트 삭제 확인 모달창 -->
 <div id="confirmModal" class="modal">
     <div class="modal-content" style="text-align: center;">
         <span class="close" id="closeConfirmModal">&times;</span>
@@ -135,6 +138,56 @@
         <p>해당 환자를 대기 리스트에서 제거하시겠습니까?</p>
         <button id="confirmYesBtn">&nbsp;&nbsp;&nbsp;예&nbsp;&nbsp;&nbsp;</button>
         <button id="confirmNoBtn">아니오</button>
+    </div>
+</div>
+<!-- 진료 예약 모달창 -->
+<div id="appointmentModal" class="modal">
+    <div class="modal-content">
+        <span class="close" id="closeAppointmentModal">&times;</span>
+        <h3>진료 예약</h3>
+        <div id="appointmentFormMessage" style="margin-bottom:10px; text-align:center;"></div>
+
+        <form id="appointmentForm" th:action="@{/appointment}" method="post">
+            <table>
+                <tr>
+                    <td><label for="patientId">환자 ID:</label></td>
+                    <!-- 환자 ID 입력란: 예약 버튼 클릭 시 자동으로 값이 입력됨 -->
+                    <td><input type="number" id="patientId" name="patientId" readonly required></td>
+                </tr>
+                <tr>
+                    <td><label for="staffId">의료진 ID:</label></td>
+                    <td><input type="number" id="staffId" name="staffId" required></td>
+                </tr>
+                <tr>
+                    <td><label for="appointment_date">예약 날짜:</label></td>
+                    <td><input type="date" id="appointment_date" name="appointment_date" required></td>
+                </tr>
+                <tr>
+                    <td><label for="appointment_time">예약 시간:</label></td>
+                    <td><input type="time" id="appointment_time" name="appointment_time" required></td>
+                </tr>
+                <tr>
+                    <td><input type="hidden" id="status" name="status" value="예약"></td>
+                </tr>
+                <tr>
+                    <td><label for="remarks">메모:</label></td>
+                    <td><input type="text" id="remarks" name="remarks" required></td>
+                </tr>
+                <tr>
+                    <td colspan="2" style="text-align: center; padding-top:10px;">
+                        <button type="submit">예약 등록</button>
+                    </td>
+                </tr>
+            </table>
+        </form>
+    </div>
+</div>
+<!-- 예약 목록 모달창 -->
+<div id="appointmentListModal" class="modal">
+    <div class="modal-content">
+        <span class="close" id="closeAppointmentListModal">&times;</span>
+        <h3>진료 예약 목록</h3>
+        <div id="appointmentListContainer"></div>
     </div>
 </div>
 
@@ -483,6 +536,135 @@
     // 페이지 로드 시 및 5초 간격으로 업데이트
     refreshStats();
     setInterval(refreshStats, 5000);
+
+</script>
+<script>
+    // "예약" 버튼 클릭 시, 예약 모달을 열고 환자 ID를 자동 입력
+    document.getElementById('searchResultContainer').addEventListener('click', function(e) {
+        if(e.target && e.target.classList.contains('appointment-btn')) {
+            const patientId = e.target.getAttribute('data-id');
+            // 자동으로 환자 ID를 예약 폼의 환자 ID 필드에 입력
+            document.getElementById('patientId').value = patientId;
+            // 예약 모달 열기
+            document.getElementById('appointmentModal').style.display = "block";
+        }
+    });
+
+    // 예약 모달 닫기 처리
+    const appointmentModal = document.getElementById("appointmentModal");
+    const closeAppointmentModalBtn = document.getElementById("closeAppointmentModal");
+
+    closeAppointmentModalBtn.onclick = function() {
+        appointmentModal.style.display = "none";
+    };
+
+    window.onclick = function(event) {
+        if (event.target === appointmentModal) {
+            appointmentModal.style.display = "none";
+        }
+    };
+
+    const appointmentForm = document.getElementById("appointmentForm");
+    const appointmentFormMessage = document.getElementById("appointmentFormMessage");
+
+    appointmentForm.addEventListener("submit", function(e) {
+        e.preventDefault(); // 기본 폼 제출 막기
+
+        const formData = new FormData(appointmentForm);
+
+        fetch(appointmentForm.action, {
+            method: "POST",
+            body: formData
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("네트워크 오류");
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    appointmentFormMessage.style.color = "green";
+                    appointmentFormMessage.textContent = data.message;
+                    setTimeout(() => {
+                        appointmentModal.style.display = "none";
+                        appointmentForm.reset();
+                        appointmentFormMessage.textContent = "";
+                    }, 1500);
+                } else {
+                    appointmentFormMessage.style.color = "red";
+                    appointmentFormMessage.textContent = data.message;
+                }
+            })
+            .catch(error => {
+                console.error("예약 등록 중 오류:", error);
+                appointmentFormMessage.style.color = "red";
+                appointmentFormMessage.textContent = "예약 등록에 실패하였습니다.";
+            });
+    });
+
+    // 예약 목록 모달 열기/닫기
+    const openAppointmentListModalBtn = document.getElementById("openAppointmentListModalBtn");
+    const appointmentListModal = document.getElementById("appointmentListModal");
+    const closeAppointmentListModalBtn = document.getElementById("closeAppointmentListModal");
+
+    openAppointmentListModalBtn.onclick = function() {
+        fetch('/appointment/list')
+            .then(response => {
+                if (!response.ok) throw new Error("네트워크 응답 오류");
+                return response.text();
+            })
+            .then(html => {
+                document.getElementById("appointmentListContainer").innerHTML = html;
+                appointmentListModal.style.display = "block";
+            })
+            .catch(error => {
+                console.error("예약 목록 불러오기 실패:", error);
+                alert("예약 목록을 불러오는데 실패했습니다.");
+            });
+    };
+
+    closeAppointmentListModalBtn.onclick = function() {
+        appointmentListModal.style.display = "none";
+    };
+
+    window.onclick = function(event) {
+        if (event.target === appointmentListModal) {
+            appointmentListModal.style.display = "none";
+        }
+    };
+
+    // 예약 상태 업데이트: 예약 목록 모달 내 "상태 변경" 버튼 이벤트 처리
+    document.getElementById("appointmentListContainer").addEventListener("click", function(e) {
+        if (e.target && e.target.classList.contains("update-status-btn")) {
+            const appointmentId = e.target.getAttribute("data-appointment-id");
+            // 해당 예약 행의 상태 변경 select를 찾음
+            const selectElem = document.querySelector(`select.status-select[data-appointment-id='${appointmentId}']`);
+            if (!selectElem) return;
+            const newStatus = selectElem.value;
+
+            fetch('/appointment/updateStatus', {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                body: "appointmentId=" + encodeURIComponent(appointmentId) + "&status=" + encodeURIComponent(newStatus)
+            })
+                .then(response => {
+                    if (!response.ok) throw new Error("네트워크 응답 오류");
+                    return response.json();
+                })
+                .then(data => {
+                    alert(data.message);
+                    // 예약 목록 새로고침
+                    openAppointmentListModalBtn.click();
+                })
+                .catch(error => {
+                    console.error("예약 상태 업데이트 실패:", error);
+                    alert("예약 상태 업데이트에 실패했습니다.");
+                });
+        }
+    });
 
 </script>
 </body>
