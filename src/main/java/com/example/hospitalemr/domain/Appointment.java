@@ -2,7 +2,8 @@ package com.example.hospitalemr.domain;
 
 import jakarta.persistence.*;
 import java.sql.Date;
-import java.sql.Time;
+import java.time.LocalDate;
+import java.time.LocalTime;
 
 @Entity
 public class Appointment {
@@ -10,10 +11,16 @@ public class Appointment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int appointment_id;
 
+    @Column(name = "patient_id")
     private int patient_id;  // FK to Patient
     private int staff_id;    // FK to MedicalStaff
-    private Date appointment_date;
-    private Time appointment_time;
+
+    @Column(name = "appointment_date")
+    private LocalDate appointment_date;
+
+    @Column(name = "appointment_time")
+    private LocalTime appointment_time;
+
     private String status;
     private String remarks;
 
@@ -41,19 +48,19 @@ public class Appointment {
         this.staff_id = staff_id;
     }
 
-    public Date getAppointment_date() {
+    public LocalDate getAppointment_date() {
         return appointment_date;
     }
 
-    public void setAppointment_date(Date appointment_date) {
+    public void setAppointment_date(LocalDate appointment_date) {
         this.appointment_date = appointment_date;
     }
 
-    public Time getAppointment_time() {
+    public LocalTime getAppointment_time() {
         return appointment_time;
     }
 
-    public void setAppointment_time(Time appointment_time) {
+    public void setAppointment_time(LocalTime appointment_time) {
         this.appointment_time = appointment_time;
     }
 

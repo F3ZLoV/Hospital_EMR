@@ -336,7 +336,7 @@ body {
 }
 
 .modal-content {
-    margin: 10% auto;
+    margin: 15% auto;
     padding: 20px;
     border: 1px solid #888;
     border-radius: 8px;
@@ -396,4 +396,26 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+}
+
+.day-btn {
+    border: none;
+    background: none;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+/* 노란색 원형 마커 */
+.day-btn.has-event::after {
+    content: "";
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 12px;
+    height: 12px;
+    background-color: yellow;
+    border-radius: 50%;
+    border: 1px solid #ccc;
 }
