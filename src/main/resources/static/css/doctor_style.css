@@ -307,3 +307,115 @@ body {
     border-left: 2px solid #ccc;
     background-color: #F9F9F9;
 }
+/* 신규 환자 등록 버튼 스타일 */
+.new-patient-btn,
+.new-appointment-btn {
+    padding: 10px 15px;
+    background-color: #2E86C1;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.new-patient-btn:hover,
+.new-appointment-btn:hover {
+    background-color: #1B4F72;
+}
+
+/* 모달 전체 배경 */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 100;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    border-radius: 8px;
+    background-color: #fff;
+
+    min-width: 400px;
+    max-width: 600px;
+    width: 60%;
+}
+.modal-content table td {
+    white-space: nowrap;
+    padding: 5px;
+}
+.modal-content .close {
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+/* 닫기 버튼 */
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+.close:hover,
+.close:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+/* 테이블 레이아웃 정돈 */
+.modal-content table {
+    width: 100%;       /* 모달 내부 폭에 맞춤 */
+    border-collapse: collapse;
+}
+
+.modal-content td {
+    padding: 5px 8px;  /* 셀 안쪽 여백 */
+    vertical-align: middle;
+}
+
+/* label과 input이 붙지 않도록 살짝 간격 부여 */
+.modal-content label {
+    margin-right: 4px;
+}
+
+#confirmYesBtn, #confirmNoBtn {
+    padding: 12px 20px; /* 위아래 여백을 조금 늘림 */
+    font-size: 1.1em;   /* 글씨 크기를 약간 키움 */
+}
+
+.waiting-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.day-btn {
+    border: none;
+    background: none;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+/* 노란색 원형 마커 */
+.day-btn.has-event::after {
+    content: "";
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 12px;
+    height: 12px;
+    background-color: yellow;
+    border-radius: 50%;
+    border: 1px solid #ccc;
+}

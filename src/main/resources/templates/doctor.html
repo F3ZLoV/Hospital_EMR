@@ -24,45 +24,27 @@
 </div>
 
 <div class="container">
-    <!-- 사이드바 -->
     <div class="sidebar">
-        <!-- 프로필 배너 -->
         <div class="profile-banner">
-            <!-- 프로필 영역 -->
             <div class="profile-top">
                 <img src="https://via.placeholder.com/40" alt="Profile Picture" class="profile-pic">
                 <div class="profile-name">홍길동(의사)</div>
             </div>
-            <!-- 상태 정보 영역 -->
             <div class="profile-stats">
                 <span class="status-label">대기</span>
-                <span class="status-number">5명</span>
+                <span id="waitingCount" class="status-number">0명</span>
                 <span class="status-separator">|</span>
                 <span class="status-label">오늘 수납</span>
-                <span class="status-number">3명</span>
+                <span id="collectionCount" class="status-number">0명</span>
             </div>
         </div>
 
-        <!-- 접수 대기 환자 리스트 영역 -->
         <div class="waiting-patient-list">
             <div class="list-header">
                 <h3>접수 대기 환자 리스트</h3>
-                <!-- 정렬 드롭다운: 오름차순/내림차순 선택 -->
-                <select id="sortSelect" onchange="sortList()">
-                    <option value="asc">오름차순</option>
-                    <option value="desc">내림차순</option>
-                </select>
             </div>
-            <div class="list-container">
-                <ul id="patientList">
-                    <li>홍길동</li>
-                    <li>김철수</li>
-                    <li>이영희</li>
-                    <li>박민수</li>
-                    <li>최지우</li>
-                    <li>김영희</li>
-                    <li>이수민</li>
-                </ul>
+            <div class="list-container" id="doctorPatientList">
+                <!-- /doctor/waiting 엔드포인트에서 반환한 프래그먼트가 여기로 로드됨 -->
             </div>
         </div>
     </div>
@@ -75,14 +57,13 @@
 
     <!-- 우측 배너 -->
     <div class="right-banner">
-        <!-- 상단 달력 배너 -->
+        <!-- 캘린더 영역 -->
         <div class="calendar-banner">
             <button id="prevMonthBtn" title="이전 달">&#9664;</button>
             <span id="calendarMonth">2025.03</span>
             <button id="nextMonthBtn" title="다음 달">&#9654;</button>
             <div class="today-date" id="todayDate">오늘: 2025.03.13</div>
         </div>
-
         <table class="month-view" id="monthView">
             <thead>
             <tr>
@@ -97,6 +78,30 @@
             </thead>
             <tbody id="calendarBody"></tbody>
         </table>
+
+        <!-- 하단 일정 목록 영역 -->
+        <div id="monthEventList">
+            <h3>이번 달 일정</h3>
+            <ul id="eventList"></ul>
+        </div>
+
+        <!-- 일정 추가 모달창 -->
+        <div id="eventModal" class="modal">
+            <div class="modal-content">
+                <span class="close" id="closeEventModal">&times;</span>
+                <h3>일정 추가</h3>
+                <p id="modalDateDisplay"></p>
+                <form id="eventForm">
+                    <label for="eventTitle">제목:</label>
+                    <input type="text" id="eventTitle" name="eventTitle" required>
+                    <br>
+                    <label for="eventDesc">설명:</label>
+                    <input type="text" id="eventDesc" name="eventDesc">
+                    <br>
+                    <button type="submit">일정 추가</button>
+                </form>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -151,7 +156,8 @@
         items.forEach(item => list.appendChild(item));
     }
 </script>
-<script> // 캘린더 스크립트
+<script>
+    // 캘린더 스크립트
     let currentDate = new Date();
     currentDate.setDate(1); // 항상 1일로 맞춰서 월만 관리
 
@@ -253,6 +259,123 @@
         updateCalendarBanner();
         renderMonthView();
 </script>
+<script>
+    // 호출 버튼 클릭 이벤트 (대기 리스트 내에서 위임 방식)
+    document.getElementById("doctorPatientList").addEventListener("click", function(e) {
+        // "호출" 버튼 클릭 시 (아직 호출되지 않은 경우)
+        if (e.target && e.target.classList.contains("call-btn")) {
+            const patientId = e.target.getAttribute("data-id");
+            if (!patientId) return;
+            console.log("의사 페이지: 호출 버튼 클릭, patientId:", patientId);
+            // 호출 이벤트를 nurse 페이지로 전달 (예: localStorage에 이벤트 등록)
+            localStorage.setItem("callPatient", JSON.stringify({ patientId: patientId }));
+        }
+        // "진료중" 버튼 클릭 시
+        else if (e.target && e.target.classList.contains("in-consultation-btn")) {
+            const patientId = e.target.getAttribute("data-id");
+            if (confirm("진료 완료 처리 하시겠습니까?")) {
+                // 진료 완료 API 호출
+                fetch('/patient/call/complete', {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: "patientId=" + encodeURIComponent(patientId)
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        alert(data.message);
+                        // 완료 처리 후 대기 리스트 새로고침 (환자가 제거되어야 함)
+                        refreshDoctorWaitingList();
+                    })
+                    .catch(error => {
+                        console.error("진료 완료 처리 실패:", error);
+                        alert("진료 완료 처리에 실패하였습니다.");
+                    });
+            }
+        }
+    });
 
+    function refreshStats() {
+        fetch('/patient/stats')
+            .then(response => {
+                if (!response.ok) throw new Error("네트워크 응답 오류");
+                return response.json();
+            })
+            .then(data => {
+                document.getElementById('waitingCount').innerText = data.waitingCount + "명";
+                document.getElementById('collectionCount').innerText = data.collectionCount + "명";
+            })
+            .catch(error => {
+                console.error("Stats refresh error:", error);
+            });
+    }
+
+    // 페이지 로드 시 및 5초 간격으로 업데이트
+    refreshStats();
+    setInterval(refreshStats, 5000);
+
+    function refreshDoctorWaitingList() {
+        fetch('/patient/doctor/waiting')
+            .then(response => {
+                if(!response.ok) {
+                    throw new Error("네트워크 응답 오류");
+                }
+                return response.text();
+            })
+            .then(html => {
+                document.getElementById("doctorPatientList").innerHTML = html;
+            })
+            .catch(error => console.error("의사 대기 리스트 로드 오류:", error));
+    }
+    refreshDoctorWaitingList();
+    setInterval(refreshDoctorWaitingList, 5000);
+</script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // doctorWaitingList 영역에 있는 호출 버튼에 이벤트 바인딩 (동적 로드라면 delegate 방식 사용)
+        document.getElementById("doctorWaitingList").addEventListener("click", function(e) {
+            if (e.target && e.target.classList.contains("call-btn")) {
+                const patientId = e.target.getAttribute("data-id");
+                if (!patientId) return;
+                // 호출 이벤트를 localStorage에 등록 (다른 탭에서 storage 이벤트 발생)
+                localStorage.setItem("callPatient", JSON.stringify({ patientId: patientId }));
+                // (원하는 경우 호출 후 버튼 비활성화 처리도 할 수 있습니다.)
+            }
+        });
+    });
+</script>
+<script>
+    document.getElementById("patientList").addEventListener("click", function(e) {
+        // 호출 버튼 처리 (이미 호출되지 않은 상태)
+        if (e.target && e.target.classList.contains("call-btn")) {
+            const patientId = e.target.getAttribute("data-id");
+            // 호출 상태로 업데이트 (예: 서버 API 호출 후 재렌더링)
+            // 예시: localStorage 또는 fetch API로 처리
+            localStorage.setItem("callPatient", JSON.stringify({ patientId: patientId }));
+        }
+        // 진료중 버튼 처리
+        if (e.target && e.target.classList.contains("in-consultation-btn")) {
+            const patientId = e.target.getAttribute("data-id");
+            if (confirm("진료 완료 처리 하시겠습니까?")) {
+                // 진료 완료 API 호출 (예: /patient/call/complete)
+                fetch('/patient/call/complete', {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: "patientId=" + encodeURIComponent(patientId)
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        alert(data.message);
+                        // 성공 시 대기 리스트 재갱신
+                        // refreshWaitingList();
+                    })
+                    .catch(error => {
+                        console.error("진료 완료 처리 실패:", error);
+                        alert("진료 완료 처리에 실패하였습니다.");
+                    });
+            }
+        }
+    });
+
+</script>
 </body>
 </html>

@@ -4,8 +4,20 @@
     <meta charset="UTF-8">
     <title>이비인후과 EMR - 간호사 메인화면</title>
     <link rel="stylesheet" th:href="@{/css/nurse_style.css}" />
+    <style>
+        /* 모달 기본 스타일 (필요시 nurse_style.css에서 별도 관리 가능) */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0; top: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+        }
+    </style>
 </head>
 <body>
+<!-- 헤더 영역 -->
 <div class="header">
     <div class="left-section">
         <span class="greeting">반갑습니다. 홍길동 님</span>
@@ -21,7 +33,9 @@
     </div>
 </div>
 
+<!-- 메인 컨테이너 -->
 <div class="container">
+    <!-- 좌측 사이드바: 프로필 및 대기 환자 리스트 -->
     <div class="sidebar">
         <div class="profile-banner">
             <div class="profile-top">
@@ -36,14 +50,9 @@
                 <span id="collectionCount" class="status-number">0명</span>
             </div>
         </div>
-
         <div class="waiting-patient-list">
             <div class="list-header">
                 <h3>접수 대기 환자 리스트</h3>
-                <select id="sortSelect" onchange="sortList()">
-                    <option value="asc">오름차순</option>
-                    <option value="desc">내림차순</option>
-                </select>
             </div>
             <div class="list-container">
                 <ul id="patientList">
@@ -52,66 +61,39 @@
         </div>
     </div>
 
+    <!-- 중앙 메인 콘텐츠 (필요한 추가 기능 배치) -->
     <div class="main-content">
         <button id="openModalBtn" class="new-patient-btn">신규 환자 등록</button>
         <button id="openAppointmentListModalBtn" class="new-patient-btn">진료 예약 목록</button>
     </div>
 
+    <!-- 우측 배너: 캘린더 영역 -->
     <div class="right-banner">
-        <!-- 캘린더 영역 -->
         <div class="calendar-banner">
             <button id="prevMonthBtn" title="이전 달">&#9664;</button>
             <span id="calendarMonth">2025.03</span>
             <button id="nextMonthBtn" title="다음 달">&#9654;</button>
             <div class="today-date" id="todayDate">오늘: 2025.03.13</div>
         </div>
-        <table class="month-view" id="monthView">
-            <thead>
-            <tr>
-                <th>일</th>
-                <th>월</th>
-                <th>화</th>
-                <th>수</th>
-                <th>목</th>
-                <th>금</th>
-                <th>토</th>
-            </tr>
-            </thead>
-            <tbody id="calendarBody"></tbody>
+        <table class="month-view" id="calendarBody">
+            <!-- 캘린더 날짜 버튼들이 렌더링됨 -->
         </table>
-
-        <!-- 하단 일정 목록 영역 -->
+        <!-- 하단 일정 목록 (클라이언트 사이드 이벤트 관리; DB 테이블 필요 없음) -->
         <div id="monthEventList">
             <h3>이번 달 일정</h3>
             <ul id="eventList"></ul>
         </div>
-
-        <!-- 일정 추가 모달창 -->
-        <div id="eventModal" class="modal">
-            <div class="modal-content">
-                <span class="close" id="closeEventModal">&times;</span>
-                <h3>일정 추가</h3>
-                <p id="modalDateDisplay"></p>
-                <form id="eventForm">
-                    <label for="eventTitle">제목:</label>
-                    <input type="text" id="eventTitle" name="eventTitle" required>
-                    <br>
-                    <label for="eventDesc">설명:</label>
-                    <input type="text" id="eventDesc" name="eventDesc">
-                    <br>
-                    <button type="submit">일정 추가</button>
-                </form>
-            </div>
-        </div>
     </div>
 </div>
 
+<!-- 모달 창 영역 -->
+
+<!-- 신규 환자 등록 모달 -->
 <div id="patientModal" class="modal">
     <div class="modal-content">
         <span class="close">&times;</span>
         <h3>신규 환자 등록</h3>
         <div id="formMessage" style="margin-bottom:10px; text-align:center;"></div>
-
         <form id="patientForm" th:action="@{/patient}" method="post">
             <table>
                 <tr>
@@ -147,7 +129,8 @@
         </form>
     </div>
 </div>
-<!-- 환자 검색 결과 모달창 -->
+
+<!-- 환자 검색 결과 모달 -->
 <div id="searchResultModal" class="modal">
     <div class="modal-content">
         <span class="close" id="closeSearchModal">&times;</span>
@@ -155,7 +138,8 @@
         <div id="searchResultContainer"></div>
     </div>
 </div>
-<!-- 대기리스트 삭제 확인 모달창 -->
+
+<!-- 대기 리스트 삭제(호출 취소) 확인 모달 -->
 <div id="confirmModal" class="modal">
     <div class="modal-content" style="text-align: center;">
         <span class="close" id="closeConfirmModal">&times;</span>
@@ -165,22 +149,22 @@
         <button id="confirmNoBtn">아니오</button>
     </div>
 </div>
-<!-- 진료 예약 모달창 -->
+
+<!-- 진료 예약 모달 -->
 <div id="appointmentModal" class="modal">
     <div class="modal-content">
         <span class="close" id="closeAppointmentModal">&times;</span>
         <h3>진료 예약</h3>
         <div id="appointmentFormMessage" style="margin-bottom:10px; text-align:center;"></div>
-
         <form id="appointmentForm" th:action="@{/appointment}" method="post">
             <table>
                 <tr>
-                    <td><label for="patientId">환자 ID:</label></td>
-                    <td><input type="number" id="patientId" name="patientId" required></td>
+                    <td><label for="patient_id">환자 ID:</label></td>
+                    <td><input type="number" id="patient_id" name="patient_id" required></td>
                 </tr>
                 <tr>
-                    <td><label for="staffId">의료진 ID:</label></td>
-                    <td><input type="number" id="staffId" name="staffId" required></td>
+                    <td><label for="staff_id">의료진 ID:</label></td>
+                    <td><input type="number" id="staff_id" name="staff_id" required></td>
                 </tr>
                 <tr>
                     <td><label for="appointment_date">예약 날짜:</label></td>
@@ -206,7 +190,8 @@
         </form>
     </div>
 </div>
-<!-- 예약 목록 모달창 -->
+
+<!-- 예약 목록 모달 -->
 <div id="appointmentListModal" class="modal">
     <div class="modal-content">
         <span class="close" id="closeAppointmentListModal">&times;</span>
@@ -215,7 +200,24 @@
     </div>
 </div>
 
+<!-- 호출 모달 (간호사 페이지에서 호출 이벤트 발생 시 바로 띄움) -->
+<div id="callModal" class="modal">
+    <div class="modal-content">
+        <span class="close" id="closeCallModal">&times;</span>
+        <h3>호출된 환자 정보</h3>
+        <div id="callPatientInfo">
+            <!-- AJAX로 호출 환자 정보를 로드 -->
+        </div>
+        <button id="confirmCallBtn">확인</button>
+        <button id="holdCallBtn">보류</button>
+    </div>
+</div>
+
+<!-- 스크립트 영역 -->
 <script>
+    // ----------------------
+    // 기본 시간 및 채팅 기능
+    // ----------------------
     function updateTime() {
         const now = new Date();
         const year = now.getFullYear();
@@ -230,138 +232,105 @@
         hour = hour % 12;
         hour = hour === 0 ? 12 : hour;
         const hourStr = String(hour).padStart(2, '0');
-        const timeString = `${year}.${month}.${date} ${dayOfWeek} ${ampm} ${hourStr}:${minutes}:${seconds}`;
-        document.getElementById('timeInfo').textContent = timeString;
+        document.getElementById("timeInfo").textContent = `${year}.${month}.${date} ${dayOfWeek} ${ampm} ${hourStr}:${minutes}:${seconds}`;
     }
     setInterval(updateTime, 1000);
-    document.getElementById('chatButton').addEventListener('click', function() {
+    document.getElementById("chatButton").addEventListener("click", function(){
         alert("채팅 기능은 추후 구현 예정입니다!");
     });
+
+    // ----------------------
+    // 대기 환자 리스트 새로고침
+    // ----------------------
+    function refreshWaitingList() {
+        fetch('/patient/waiting')
+            .then(response => response.text())
+            .then(html => { document.getElementById("patientList").innerHTML = html; })
+            .catch(error => console.error("대기 리스트 오류:", error));
+    }
+    refreshWaitingList();
+    setInterval(refreshWaitingList, 5000);
+
+    // ----------------------
+    // 정렬 기능
+    // ----------------------
     function sortList() {
         const select = document.getElementById('sortSelect');
         const order = select.value;
         const list = document.getElementById('patientList');
         let items = Array.from(list.getElementsByTagName('li'));
         items.sort((a, b) => {
-            const nameA = a.textContent.trim();
-            const nameB = b.textContent.trim();
-            return order === 'asc'
-                ? nameA.localeCompare(nameB, 'ko')
-                : nameB.localeCompare(nameA, 'ko');
+            return order === 'asc' ?
+                a.textContent.trim().localeCompare(b.textContent.trim(), 'ko')
+                : b.textContent.trim().localeCompare(a.textContent.trim(), 'ko');
         });
         list.innerHTML = "";
         items.forEach(item => list.appendChild(item));
     }
 
-    // modal
-    var modal = document.getElementById("patientModal");
-    var openModalBtn = document.getElementById("openModalBtn");
-    var closeBtn = document.getElementsByClassName("close")[0];
-    openModalBtn.onclick = function() {
-        modal.style.display = "block";
+    // ----------------------
+    // 캘린더 기능
+    // ----------------------
+    let currentDate = new Date();
+    currentDate.setDate(1);
+    function updateCalendarBanner() {
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+        const monthStr = String(month + 1).padStart(2, '0');
+        document.getElementById("calendarMonth").textContent = `${year}.${monthStr}`;
+        const today = new Date();
+        const tYear = today.getFullYear();
+        const tMonth = String(today.getMonth() + 1).padStart(2, '0');
+        const tDate = String(today.getDate()).padStart(2, '0');
+        document.getElementById("todayDate").textContent = `오늘: ${tYear}.${tMonth}.${tDate}`;
     }
-    closeBtn.onclick = function() {
-        modal.style.display = "none";
-    }
-    window.onclick = function(event) {
-        if (event.target == modal) {
-            modal.style.display = "none";
+    function renderCalendar() {
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+        const firstDay = new Date(year, month, 1).getDay();
+        const lastDate = new Date(year, month + 1, 0).getDate();
+        const calendarBody = document.getElementById("calendarBody");
+        calendarBody.innerHTML = "";
+        let row = document.createElement("tr");
+        let cellCount = 0;
+        for(let i=0; i<firstDay; i++){
+            let cell = document.createElement("td");
+            row.appendChild(cell);
+            cellCount++;
         }
-    }
-</script>
-<script>
-    // AJAX 폼 제출 처리
-    const patientForm = document.getElementById("patientForm");
-    const formMessage = document.getElementById("formMessage");
-
-    patientForm.addEventListener("submit", function(e) {
-        e.preventDefault(); // 기본 폼 제출 막기
-
-        // 폼 데이터를 FormData 객체로 생성
-        const formData = new FormData(patientForm);
-
-        // fetch API로 POST 요청 전송
-        fetch(patientForm.action, {
-            method: "POST",
-            body: formData
-        })
-            .then(response => {
-                if(!response.ok) {
-                    throw new Error("네트워크 오류");
-                }
-                return response.json();
-            })
-            .then(data => {
-                if(data.success) {
-                    formMessage.style.color = "green";
-                    formMessage.textContent = data.message;
-                    // 성공 후 일정 시간(예: 2초) 후 모달 닫기 및 폼 리셋
-                    setTimeout(() => {
-                        modal.style.display = "none";
-                        patientForm.reset();
-                        formMessage.textContent = "";
-                    }, 2000);
-                } else {
-                    formMessage.style.color = "red";
-                    formMessage.textContent = data.message;
-                }
-            })
-            .catch(error => {
-                formMessage.style.color = "red";
-                formMessage.textContent = "환자등록에 실패하였습니다.";
-                console.error("Error:", error);
-            });
-    });
-</script>
-<script>
-    const searchBar = document.getElementById("topSearchBar");
-    searchBar.addEventListener("keypress", function(event) {
-        if (event.key === "Enter") {
-            event.preventDefault(); // 폼 submit 방지
-            const keyword = searchBar.value.trim();
-            if (!keyword) {
-                alert("검색어를 입력하세요.");
-                return;
+        for(let d=1; d<=lastDate; d++){
+            let cell = document.createElement("td");
+            cell.innerHTML = `<button class="day-btn">${d}</button>`;
+            row.appendChild(cell);
+            cellCount++;
+            if(cellCount % 7 === 0){
+                calendarBody.appendChild(row);
+                row = document.createElement("tr");
             }
-            // AJAX GET 요청
-            fetch(`/patient/search?keyword=${encodeURIComponent(keyword)}`)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error("네트워크 오류");
-                    }
-                    return response.text(); // 서버에서 HTML 조각을 반환한다고 가정
-                })
-                .then(html => {
-                    // 검색 결과 HTML을 모달 내부에 삽입
-                    document.getElementById("searchResultContainer").innerHTML = html;
-                    // 모달 열기
-                    document.getElementById("searchResultModal").style.display = "block";
-                })
-                .catch(error => {
-                    console.error("검색 실패:", error);
-                    alert("검색 결과를 불러오는 데 실패했습니다.");
-                });
         }
+        while(cellCount % 7 !== 0){
+            let cell = document.createElement("td");
+            row.appendChild(cell);
+            cellCount++;
+        }
+        calendarBody.appendChild(row);
+    }
+    document.getElementById("prevMonthBtn").addEventListener("click", () => {
+        currentDate.setMonth(currentDate.getMonth()-1);
+        updateCalendarBanner();
+        renderCalendar();
     });
+    document.getElementById("nextMonthBtn").addEventListener("click", () => {
+        currentDate.setMonth(currentDate.getMonth()+1);
+        updateCalendarBanner();
+        renderCalendar();
+    });
+    updateCalendarBanner();
+    renderCalendar();
 
-    const searchResultModal = document.getElementById("searchResultModal");
-    const closeSearchModal = document.getElementById("closeSearchModal");
-
-    closeSearchModal.onclick = function() {
-        searchResultModal.style.display = "none";
-    };
-
-    window.onclick = function(event) {
-        if (event.target === searchResultModal) {
-            searchResultModal.style.display = "none";
-        }
-    };
-
-</script>
-
-<script>
-
-    // 환자 카드 접수 버튼 처리 (검색 결과 모달 내)
+    // ----------------------
+    // 접수 기능
+    // ----------------------
     document.getElementById('searchResultContainer').addEventListener('click', function(e) {
         if (e.target && e.target.classList.contains('register-btn')) {
             const patientId = e.target.getAttribute('data-id');
@@ -392,24 +361,8 @@
                 });
         }
     });
-
-    function refreshWaitingList() {
-        fetch('/patient/waiting')
-            .then(response => {
-                if(!response.ok) throw new Error("네트워크 응답 오류");
-                return response.text();
-            })
-            .then(html => {
-                document.getElementById("patientList").innerHTML = html;
-            })
-            .catch(error => {
-                console.error("대기 환자 리스트 갱신 중 오류 발생:", error);
-            });
-    }
-
     // 전역 변수에 삭제할 환자 ID 저장
     let deletePatientId = null;
-
     // 삭제 버튼 클릭 이벤트 처리 (대기 리스트 내)
     document.getElementById('patientList').addEventListener('click', function(e) {
         if (e.target && e.target.classList.contains('delete-btn')) {
@@ -418,7 +371,6 @@
             document.getElementById("confirmModal").style.display = "block";
         }
     });
-
     // 확인 모달 닫기 처리
     document.getElementById("closeConfirmModal").onclick = function() {
         document.getElementById("confirmModal").style.display = "none";
@@ -487,9 +439,121 @@
     refreshStats();
     setInterval(refreshStats, 5000);
 
-</script>
-<script>
-    // "예약" 버튼 클릭 시, 예약 모달을 열고 환자 ID를 자동 입력
+
+    // ----------------------
+    // 호출 모달 기능 (간호사 페이지)
+    // ----------------------
+    window.addEventListener("storage", function(event) {
+        if (event.key === "callPatient" && event.newValue) {
+            try {
+                const callInfo = JSON.parse(event.newValue);
+                const patientId = callInfo.patientId;
+                if (!patientId) return;
+                fetch('/patient/call?patientId=' + encodeURIComponent(patientId))
+                    .then(response => response.json())
+                    .then(patient => {
+                        document.getElementById("callPatientInfo").innerHTML = `
+            <p><strong>이름:</strong> ${patient.name}</p>
+            <p><strong>생년월일:</strong> ${patient.date_of_birth}</p>
+            <p><strong>전화번호:</strong> ${patient.phone_number}</p>
+            <p><strong>이메일:</strong> ${patient.email}</p>
+            <p><strong>주소:</strong> ${patient.address}</p>
+          `;
+                        document.getElementById("callModal").dataset.patientId = patientId;
+                        document.getElementById("callModal").style.display = "block";
+                    })
+                    .catch(error => console.error("호출 환자 정보 로드 실패:", error));
+            } catch(e) {
+                console.error("호출 이벤트 파싱 오류:", e);
+            }
+        }
+    });
+    document.getElementById("closeCallModal").onclick = function() {
+        document.getElementById("callModal").style.display = "none";
+    };
+
+    // 호출 모달 "확인" 버튼 (nurse 페이지)
+    document.getElementById("confirmCallBtn").addEventListener("click", function(){
+        const patientId = document.getElementById("callModal").dataset.patientId;
+        if (!patientId) return;
+        // 백엔드에서 환자의 상태를 '진료중' (called = true)로 업데이트하도록 함
+        fetch('/patient/call/confirm', {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: "patientId=" + encodeURIComponent(patientId)
+        })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                document.getElementById("callModal").style.display = "none";
+                // 대기 리스트는 즉시 제거하지 않고, 나중에 의사 페이지에서 버튼 상태에 따라 업데이트됨
+                // (예: 주기적 새로고침 시 환자의 called 플래그가 true로 반영됨)
+            })
+            .catch(error => {
+                console.error("호출 확인 실패:", error);
+                alert("호출 확인에 실패하였습니다.");
+            });
+    });
+
+    // 호출 모달 "보류" 버튼 처리
+    document.getElementById("holdCallBtn").addEventListener("click", function(){
+        const patientId = document.getElementById("callModal").dataset.patientId;
+        if (!patientId) return;
+        fetch('/patient/call/hold', {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: "patientId=" + encodeURIComponent(patientId)
+        })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                document.getElementById("callModal").style.display = "none";
+                refreshWaitingList();
+            })
+            .catch(error => {
+                console.error("보류 처리 실패:", error);
+                alert("보류 처리에 실패하였습니다.");
+            });
+    });
+
+    // ----------------------
+    // 환자 검색 결과 모달 처리
+    // ----------------------
+    const searchBar = document.getElementById("topSearchBar");
+    searchBar.addEventListener("keypress", function(event) {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            const keyword = searchBar.value.trim();
+            if (!keyword) {
+                alert("검색어를 입력하세요.");
+                return;
+            }
+            fetch(`/patient/search?keyword=${encodeURIComponent(keyword)}`)
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById("searchResultContainer").innerHTML = html;
+                    document.getElementById("searchResultModal").style.display = "block";
+                })
+                .catch(error => {
+                    console.error("검색 실패:", error);
+                    alert("검색 결과를 불러오는데 실패했습니다.");
+                });
+        }
+    });
+    const searchResultModal = document.getElementById("searchResultModal");
+    const closeSearchModal = document.getElementById("closeSearchModal");
+    closeSearchModal.onclick = function() {
+        searchResultModal.style.display = "none";
+    };
+    window.onclick = function(event) {
+        if (event.target === searchResultModal) {
+            searchResultModal.style.display = "none";
+        }
+    };
+
+    // ----------------------
+    // 예약 모달 처리
+    // ----------------------
     document.getElementById('searchResultContainer').addEventListener('click', function(e) {
         if (e.target && e.target.classList.contains('appointment-btn')) {
             const patientId = e.target.getAttribute('data-id');
@@ -497,43 +561,31 @@
                 alert("환자 ID가 누락되었습니다.");
                 return;
             }
-            // 환자 ID가 문자열이라면, 숫자로 변환할 필요가 있다면 아래처럼 변환
-            //const pid = parseInt(patientId, 10);
-            document.getElementById('patientId').value = patientId;
+            document.getElementById('patient_id').value = patientId;
             document.getElementById('appointmentModal').style.display = "block";
         }
     });
-
-    // 예약 모달 닫기 처리
     const appointmentModal = document.getElementById("appointmentModal");
     const closeAppointmentModalBtn = document.getElementById("closeAppointmentModal");
-
     closeAppointmentModalBtn.onclick = function() {
         appointmentModal.style.display = "none";
     };
-
-    window.onclick = function(event) {
+    window.addEventListener('click', function(event) {
         if (event.target === appointmentModal) {
             appointmentModal.style.display = "none";
         }
-    };
-
+    });
     const appointmentForm = document.getElementById("appointmentForm");
     const appointmentFormMessage = document.getElementById("appointmentFormMessage");
-
     appointmentForm.addEventListener("submit", function(e) {
-        e.preventDefault(); // 기본 폼 제출 막기
-
+        e.preventDefault();
         const formData = new FormData(appointmentForm);
-
         fetch(appointmentForm.action, {
             method: "POST",
             body: formData
         })
             .then(response => {
-                if (!response.ok) {
-                    throw new Error("네트워크 오류");
-                }
+                if (!response.ok) throw new Error("네트워크 오류");
                 return response.json();
             })
             .then(data => {
@@ -557,11 +609,10 @@
             });
     });
 
-    // 예약 목록 모달 열기/닫기
+    // 예약 목록 모달 처리
     const openAppointmentListModalBtn = document.getElementById("openAppointmentListModalBtn");
     const appointmentListModal = document.getElementById("appointmentListModal");
     const closeAppointmentListModalBtn = document.getElementById("closeAppointmentListModal");
-
     openAppointmentListModalBtn.onclick = function() {
         fetch('/appointment/list')
             .then(response => {
@@ -577,135 +628,73 @@
                 alert("예약 목록을 불러오는데 실패했습니다.");
             });
     };
-
     closeAppointmentListModalBtn.onclick = function() {
         appointmentListModal.style.display = "none";
     };
-
-    window.onclick = function(event) {
+    window.addEventListener('click', function(event) {
         if (event.target === appointmentListModal) {
             appointmentListModal.style.display = "none";
         }
-    };
-
-    // 예약 상태 업데이트: 예약 목록 모달 내 "상태 변경" 버튼 이벤트 처리
-    document.getElementById("appointmentListContainer").addEventListener("click", function(e) {
-        if (e.target && e.target.classList.contains("update-status-btn")) {
-            const appointmentId = e.target.getAttribute("data-appointment-id");
-            // 해당 예약 행의 상태 변경 select를 찾음
-            const selectElem = document.querySelector(`select.status-select[data-appointment-id='${appointmentId}']`);
-            if (!selectElem) return;
-            const newStatus = selectElem.value;
-
-            fetch('/appointment/updateStatus', {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded"
-                },
-                body: "appointmentId=" + encodeURIComponent(appointmentId) + "&status=" + encodeURIComponent(newStatus)
-            })
-                .then(response => {
-                    if (!response.ok) throw new Error("네트워크 응답 오류");
-                    return response.json();
-                })
-                .then(data => {
-                    alert(data.message);
-                    // 예약 목록 새로고침
-                    openAppointmentListModalBtn.click();
-                })
-                .catch(error => {
-                    console.error("예약 상태 업데이트 실패:", error);
-                    alert("예약 상태 업데이트에 실패했습니다.");
-                });
-        }
     });
 
-</script>
-<script>
+    // ----------------------
+    // 캘린더 이벤트 (일정 추가) – 클라이언트 사이드 처리
+    // ----------------------
     (function(){
-        // 전역 변수: 현재 달, 일정 데이터 (YYYY-MM-DD 키)
-        let currentDate = new Date();
-        currentDate.setDate(1);
-        let events = {}; // 예: { "2025-03-15": [{title:"회의", desc:"프로젝트 회의"}], ... }
-
-        // 캘린더 상단(월, 오늘 날짜) 업데이트
-        function updateCalendarBanner() {
-            const year = currentDate.getFullYear();
-            const month = currentDate.getMonth();
-            const monthStr = String(month + 1).padStart(2, '0');
-            document.getElementById('calendarMonth').textContent = `${year}.${monthStr}`;
-            const today = new Date();
-            const tYear = today.getFullYear();
-            const tMonth = String(today.getMonth() + 1).padStart(2, '0');
-            const tDate = String(today.getDate()).padStart(2, '0');
-            document.getElementById('todayDate').textContent = `오늘: ${tYear}.${tMonth}.${tDate}`;
-        }
-
-        // 캘린더 렌더링
-        function renderMonthView() {
+        let events = {}; // { "YYYY-MM-DD": [{ title: "회의", desc: "내용" }, ...] }
+        function renderEventCalendar() {
             const year = currentDate.getFullYear();
             const month = currentDate.getMonth();
             const firstDay = new Date(year, month, 1).getDay();
-            const lastDate = new Date(year, month + 1, 0).getDate();
+            const lastDate = new Date(year, month+1, 0).getDate();
             const calendarBody = document.getElementById('calendarBody');
             calendarBody.innerHTML = "";
             let row = document.createElement('tr');
             let cellCount = 0;
-
-            // 빈 칸 채우기 (이전 달 날짜 자리)
-            for (let i = 0; i < firstDay; i++) {
+            for(let i=0; i<firstDay; i++){
                 let cell = document.createElement('td');
                 row.appendChild(cell);
                 cellCount++;
             }
-
-            // 이번 달 날짜 생성
-            for (let date = 1; date <= lastDate; date++) {
+            for(let d=1; d<=lastDate; d++){
                 let cell = document.createElement('td');
                 let btn = document.createElement('button');
                 btn.className = 'day-btn';
-                btn.textContent = date;
-                // 날짜 키: YYYY-MM-DD
-                let dateKey = `${year}-${String(month+1).padStart(2, '0')}-${String(date).padStart(2, '0')}`;
-                if (events[dateKey] && events[dateKey].length > 0) {
-                    btn.classList.add('has-event'); // 일정이 있으면 마커 표시
+                btn.textContent = d;
+                let dateKey = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                if(events[dateKey] && events[dateKey].length > 0){
+                    btn.classList.add('has-event');
                 }
-                // 날짜 버튼 클릭 시 일정 추가 모달 열기
-                btn.addEventListener('click', function() {
+                btn.addEventListener('click', function(){
                     openEventModal(dateKey);
                 });
                 cell.appendChild(btn);
                 row.appendChild(cell);
                 cellCount++;
-                if (cellCount % 7 === 0) {
+                if(cellCount % 7 === 0){
                     calendarBody.appendChild(row);
                     row = document.createElement('tr');
                 }
             }
-            // 남은 칸 채우기
-            while(cellCount % 7 !== 0) {
+            while(cellCount % 7 !== 0){
                 let cell = document.createElement('td');
                 row.appendChild(cell);
                 cellCount++;
             }
             calendarBody.appendChild(row);
         }
-
-        // 하단 일정 목록 업데이트
         function refreshEventList() {
             const eventListElem = document.getElementById("eventList");
             eventListElem.innerHTML = "";
             const currentMonthPrefix = `${currentDate.getFullYear()}-${String(currentDate.getMonth()+1).padStart(2, '0')}`;
-            for (let dateKey in events) {
-                if (dateKey.startsWith(currentMonthPrefix) && events[dateKey].length > 0) {
+            for(let dateKey in events){
+                if(dateKey.startsWith(currentMonthPrefix) && events[dateKey].length > 0){
                     let li = document.createElement('li');
                     li.textContent = dateKey + ": " + events[dateKey].map(ev => ev.title).join(", ");
                     eventListElem.appendChild(li);
                 }
             }
         }
-
-        // 일정 추가 모달 관련 변수 및 함수
         const eventModal = document.getElementById("eventModal");
         const closeEventModalBtn = document.getElementById("closeEventModal");
         const modalDateDisplay = document.getElementById("modalDateDisplay");
@@ -715,54 +704,48 @@
             modalDateDisplay.textContent = "날짜: " + dateKey;
             eventModal.style.display = "block";
         }
-        closeEventModalBtn.onclick = function() {
+        closeEventModalBtn.onclick = function(){
             eventModal.style.display = "none";
         };
         window.addEventListener('click', function(event){
-            if (event.target === eventModal) {
+            if(event.target === eventModal){
                 eventModal.style.display = "none";
             }
         });
-
-        // 일정 추가 폼 제출 처리
-        document.getElementById("eventForm").addEventListener("submit", function(e) {
+        document.getElementById("eventForm").addEventListener("submit", function(e){
             e.preventDefault();
             const title = document.getElementById("eventTitle").value.trim();
             const desc = document.getElementById("eventDesc").value.trim();
-            if (!title) {
+            if(!title){
                 alert("제목을 입력하세요.");
                 return;
             }
-            if (!events[selectedDateKey]) {
+            if(!events[selectedDateKey]){
                 events[selectedDateKey] = [];
             }
             events[selectedDateKey].push({ title: title, desc: desc });
             eventModal.style.display = "none";
             document.getElementById("eventForm").reset();
-            renderMonthView();
+            renderEventCalendar();
             refreshEventList();
         });
-
-        // 이전/다음 달 버튼 이벤트
         document.getElementById('prevMonthBtn').addEventListener('click', () => {
-            currentDate.setMonth(currentDate.getMonth() - 1);
+            currentDate.setMonth(currentDate.getMonth()-1);
             updateCalendarBanner();
-            renderMonthView();
+            renderEventCalendar();
             refreshEventList();
         });
         document.getElementById('nextMonthBtn').addEventListener('click', () => {
-            currentDate.setMonth(currentDate.getMonth() + 1);
+            currentDate.setMonth(currentDate.getMonth()+1);
             updateCalendarBanner();
-            renderMonthView();
+            renderEventCalendar();
             refreshEventList();
         });
-
-        // 초기 렌더링
         updateCalendarBanner();
-        renderMonthView();
+        renderEventCalendar();
         refreshEventList();
     })();
-</script>
 
+</script>
 </body>
 </html>

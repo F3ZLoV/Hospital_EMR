@@ -11,7 +11,7 @@ public class Patient {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "patient_id")
-    private int id;
+    private Long id;
 
     private String name;
 
@@ -27,12 +27,21 @@ public class Patient {
     private String address;
 
     private boolean waiting = true; // 환자 대기 여부 (true = 대기중)
+    private boolean called = false; // 호출 여부
 
     @Column(name = "reception_time", columnDefinition = "TIMESTAMP DEFAULT NULL")
     private LocalDateTime receptionTime;
 
 
     public Patient() {}
+
+    public boolean isCalled() {
+        return called;
+    }
+
+    public void setCalled(boolean called) {
+        this.called = called;
+    }
 
     public Patient(String name, String phone_number) {
         this.name = name;
@@ -47,11 +56,11 @@ public class Patient {
 
     // getters and setters
 
-    public int getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(Long id) {
         this.id = id;
     }
 

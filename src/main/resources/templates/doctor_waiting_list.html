@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Doctor Waiting List Fragment</title>
+</head>
+<body>
+<div th:fragment="doctorWaitingFragment">
+    <ul>
+        <li th:each="patient, iterStat : ${patients}" class="waiting-item">
+            <span th:text="${patient.name}">환자 이름</span>
+            <!-- 오직 첫 번째 항목에 대해서만 버튼을 표시 -->
+            <button th:if="${iterStat.index == 0 and !patient.called}" class="call-btn" th:attr="data-id=${patient.id}">호출</button>
+            <button th:if="${iterStat.index == 0 and patient.called}" class="in-consultation-btn" th:attr="data-id=${patient.id}">진료중</button>
+        </li>
+    </ul>
+</div>
+</body>
+</html>

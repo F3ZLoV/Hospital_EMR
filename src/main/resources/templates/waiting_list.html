@@ -9,10 +9,11 @@
   <ul>
     <li th:each="patient : ${patients}" class="waiting-item">
       <span th:text="${patient.name}">환자 이름</span>
-      <button class="delete-btn" th:attr="data-id=${patient.id}">삭제</button>
+      <!-- 호출(진료중) 상태에 따라 다른 버튼을 표시 -->
+      <button th:if="${!patient.called}" class="delete-btn" th:attr="data-id=${patient.id}">삭제</button>
+      <button th:if="${patient.called}" class="in-consultation-btn" disabled>진료중</button>
     </li>
   </ul>
 </div>
-
 </body>
 </html>
