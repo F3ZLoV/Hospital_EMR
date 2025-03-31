@@ -61,7 +61,7 @@
         </div>
     </div>
 
-    <!-- 중앙 메인 콘텐츠 (필요한 추가 기능 배치) -->
+    <!-- 중앙 메인 콘텐츠 -->
     <div class="main-content">
         <button id="openModalBtn" class="new-patient-btn">신규 환자 등록</button>
         <button id="openAppointmentListModalBtn" class="new-patient-btn">진료 예약 목록</button>
@@ -88,13 +88,15 @@
 
 <!-- 모달 창 영역 -->
 
-<!-- 신규 환자 등록 모달 -->
+<!-- 신규 환자 등록 모달 (HTML 일부) -->
 <div id="patientModal" class="modal">
     <div class="modal-content">
-        <span class="close">&times;</span>
+        <span class="close" id="closePatientModal">&times;</span>
         <h3>신규 환자 등록</h3>
+        <!-- 여기서 formMessage 영역을 사용 -->
         <div id="formMessage" style="margin-bottom:10px; text-align:center;"></div>
         <form id="patientForm" th:action="@{/patient}" method="post">
+            <!-- 폼 내용 -->
             <table>
                 <tr>
                     <td><label for="name">이름:</label></td>
@@ -129,6 +131,7 @@
         </form>
     </div>
 </div>
+
 
 <!-- 환자 검색 결과 모달 -->
 <div id="searchResultModal" class="modal">
@@ -210,6 +213,51 @@
         </div>
         <button id="confirmCallBtn">확인</button>
         <button id="holdCallBtn">보류</button>
+    </div>
+</div>
+
+<!-- 접수 모달 -->
+<div id="receptionModal" class="modal">
+    <div class="modal-content">
+        <span class="close" id="closeReceptionModal">&times;</span>
+        <h3>진료 접수</h3>
+
+        <form id="receptionForm" action="/patient/register" method="post">
+            <!-- 숨겨진/읽기전용 환자 ID -->
+            <label for="patientId">환자 ID:</label>
+            <input type="text" id="patientId" name="patientId" readonly />
+
+            <!-- 의사 ID (직접 입력) -->
+            <label for="doctorId">의사 ID:</label>
+            <input type="number" id="doctorId" name="doctorId" />
+
+            <!-- 진료 날짜/시간 -->
+            <label for="visitDate">진료 날짜:</label>
+            <input type="date" id="visitDate" name="visitDate" />
+            <label for="visitTime">진료 시간:</label>
+            <input type="time" id="visitTime" name="visitTime" />
+
+            <!-- 진료 사유 -->
+            <label for="visitReason">진료 사유:</label>
+            <textarea id="visitReason" name="visitReason"></textarea>
+
+            <!-- 방문 유형 -->
+            <label for="visitType">방문 유형:</label>
+            <select id="visitType" name="visitType">
+                <option value="외래">외래</option>
+                <option value="입원">입원</option>
+                <option value="응급">응급</option>
+                <option value="재진">재진</option>
+                <option value="진료예약">진료예약</option>
+                <option value="상담">상담</option>
+                <option value="검진">검진</option>
+                <option value="기타">기타</option>
+            </select>
+
+            <br><br>
+            <button type="submit">접수 등록</button>
+        </form>
+        <div id="receptionFormMessage" style="margin-top: 10px; text-align: center;"></div>
     </div>
 </div>
 
@@ -746,6 +794,141 @@
         refreshEventList();
     })();
 
+</script>
+<!-- 접수 모달 처리 -->
+<script>
+    function openReceptionModal(patientId) {
+        document.getElementById("patientId").value = patientId;
+        let now = new Date();
+        document.getElementById("visitDate").valueAsDate = now;
+        let hh = String(now.getHours()).padStart(2, '0');
+        let mm = String(now.getMinutes()).padStart(2, '0');
+        document.getElementById("visitTime").value = hh + ":" + mm;
+        document.getElementById("receptionModal").style.display = "block";
+    }
+
+    document.getElementById("closeReceptionModal").onclick = function() {
+        document.getElementById("receptionModal").style.display = "none";
+    };
+
+    const receptionForm = document.getElementById("receptionForm");
+    const receptionFormMessage = document.getElementById("receptionFormMessage");
+    receptionForm.addEventListener("submit", function(e) {
+        e.preventDefault();
+        const formData = new FormData(receptionForm);
+
+        fetch(receptionForm.action, {
+            method: "POST",
+            body: formData
+        })
+            .then(response => response.json())
+            .then(data => {
+                if(data.success) {
+                    receptionFormMessage.style.color = "green";
+                    receptionFormMessage.textContent = data.message;
+                    setTimeout(() => {
+                        document.getElementById("receptionModal").style.display = "none";
+                        receptionForm.reset();
+                        receptionFormMessage.textContent = "";
+                        refreshWaitingList();
+                    }, 1000);
+                } else {
+                    receptionFormMessage.style.color = "red";
+                    receptionFormMessage.textContent = data.message;
+                }
+            })
+            .catch(error => {
+                console.error("접수 등록 실패:", error);
+                receptionFormMessage.style.color = "red";
+                receptionFormMessage.textContent = "등록 중 오류 발생";
+            });
+    });
+
+    // 접수 모달에서 폼 제출 시 처리
+    document.getElementById("receptionForm").addEventListener("submit", function(e) {
+        e.preventDefault();
+        const formData = new FormData(document.getElementById("receptionForm"));
+
+        // 먼저 /patient/register API 호출 (환자 대기 상태 업데이트)
+        fetch('/patient/register', {
+            method: "POST",
+            body: new URLSearchParams({ patientId: formData.get("patientId") })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if(data.success) {
+                    // 환자 접수가 성공하면, 진료 접수 정보를 등록하기 위해 /medicalvisit/create 호출
+                    return fetch('/medicalvisit/create', {
+                        method: "POST",
+                        body: new URLSearchParams({
+                            patientId: formData.get("patientId"),
+                            doctorId: formData.get("doctorId"),
+                            visitDate: formData.get("visitDate"),
+                            visitTime: formData.get("visitTime"),
+                            visitReason: formData.get("visitReason"),
+                            visitType: formData.get("visitType")
+                        })
+                    });
+                } else {
+                    throw new Error(data.message);
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.success) {
+                    alert("진료 접수 등록 성공");
+                    document.getElementById("receptionModal").style.display = "none";
+                    // 필요시 대기 리스트 새로고침 등 추가 작업
+                } else {
+                    alert("진료 접수 등록 실패: " + data.message);
+                }
+            })
+            .catch(error => {
+                console.error("접수 처리 중 오류:", error);
+                alert("접수 처리 중 오류가 발생하였습니다.");
+            });
+    });
+</script>
+<script>
+    document.getElementById("openModalBtn").addEventListener("click", function() {
+        document.getElementById("patientModal").style.display = "block";
+    });
+    document.getElementById("closePatientModal").onclick = function() {
+        document.getElementById("patientModal").style.display = "none";
+    };
+    document.getElementById("patientForm").addEventListener("submit", function(e) {
+        e.preventDefault();
+        const form = this;
+        const formData = new FormData(form);
+
+        fetch(form.action, {
+            method: "POST",
+            body: formData
+        })
+            .then(response => response.json())
+            .then(data => {
+                const formMessage = document.getElementById("formMessage");
+                if (data.success) {
+                    formMessage.style.color = "green";
+                    formMessage.textContent = data.message;
+                    // 1.5초 후에 모달창 닫고 폼 리셋
+                    setTimeout(() => {
+                        document.getElementById("patientModal").style.display = "none";
+                        form.reset();
+                        formMessage.textContent = "";
+                    }, 1500);
+                } else {
+                    formMessage.style.color = "red";
+                    formMessage.textContent = data.message;
+                }
+            })
+            .catch(error => {
+                console.error("환자 등록 중 오류 발생:", error);
+                const formMessage = document.getElementById("formMessage");
+                formMessage.style.color = "red";
+                formMessage.textContent = "환자 등록 중 오류 발생";
+            });
+    });
 </script>
 </body>
 </html>

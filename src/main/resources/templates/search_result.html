@@ -26,7 +26,10 @@
                 <strong>주소:</strong>
                 <span th:text="${patient.address}"></span>
             </p>
-            <button class="register-btn" th:attr="data-id=${patient.id}">접수</button>
+            <button class="reception-btn"
+                    th:attr="data-patient-id=${patient.id}, onclick='openReceptionModal(' + ${patient.id} + ');'">
+                접수
+            </button>
             <button class="appointment-btn" th:attr="data-id=${patient.id}">예약</button>
         </div>
     </div>

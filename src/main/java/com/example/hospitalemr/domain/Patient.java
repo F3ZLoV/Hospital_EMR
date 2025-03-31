@@ -26,7 +26,7 @@ public class Patient {
     private String email;
     private String address;
 
-    private boolean waiting = true; // 환자 대기 여부 (true = 대기중)
+    private boolean waiting = false; // 환자 대기 여부 (true = 대기중)
     private boolean called = false; // 호출 여부
 
     @Column(name = "reception_time", columnDefinition = "TIMESTAMP DEFAULT NULL")
@@ -52,7 +52,12 @@ public class Patient {
         this.address = address;
         this.waiting = true;
     }
-
+    @PrePersist
+    public void prePersist() {
+        if (this.receptionTime == null) {
+            this.receptionTime = LocalDateTime.now();
+        }
+    }
 
     // getters and setters
 

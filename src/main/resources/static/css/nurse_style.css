@@ -326,7 +326,7 @@ body {
 .modal {
     display: none;
     position: fixed;
-    z-index: 100;
+    z-index: 1000;
     left: 0;
     top: 0;
     width: 100%;
@@ -336,25 +336,39 @@ body {
 }
 
 .modal-content {
+    position: relative;
     margin: 15% auto;
-    padding: 20px;
+    padding: 30px 20px 20px;
     border: 1px solid #888;
     border-radius: 8px;
-    background-color: #fff;
-
+    background-color: #ffffff;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
     min-width: 400px;
     max-width: 600px;
     width: 60%;
+    font-family: 'Arial', sans-serif;
 }
 .modal-content table td {
     white-space: nowrap;
     padding: 5px;
 }
 .modal-content .close {
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 1.5em;
+    color: #aaa;
     cursor: pointer;
+    user-select: none;
+}
+.modal-content .close:hover {
+    color: #000;
+}
+.modal-content h3 {
+    margin-top: 0;
+    text-align: center;
+    font-size: 1.5em;
+    margin-bottom: 20px;
 }
 
 /* 닫기 버튼 */
@@ -418,4 +432,54 @@ body {
     background-color: yellow;
     border-radius: 50%;
     border: 1px solid #ccc;
+}
+/* 접수 폼 레이아웃 */
+#receptionForm {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* 레이블 스타일 */
+#receptionForm label {
+    font-weight: bold;
+    margin-bottom: 5px;
+    display: block;
+}
+
+/* 입력 필드 스타일 */
+#receptionForm input[type="text"],
+#receptionForm input[type="number"],
+#receptionForm input[type="date"],
+#receptionForm input[type="time"],
+#receptionForm select,
+#receptionForm textarea {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1em;
+    font-family: 'Arial', sans-serif;
+    box-sizing: border-box;
+}
+
+/* 텍스트에리어 스타일 */
+#receptionForm textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+/* 제출 버튼 스타일 */
+#receptionForm button[type="submit"] {
+    padding: 10px;
+    background-color: #007bff;
+    color: #ffffff;
+    border: none;
+    border-radius: 4px;
+    font-size: 1em;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+#receptionForm button[type="submit"]:hover {
+    background-color: #0056b3;
 }
