@@ -69,6 +69,7 @@
 
     <!-- 우측 배너: 캘린더 영역 -->
     <div class="right-banner">
+        <!-- 캘린더 영역 -->
         <div class="calendar-banner">
             <button id="prevMonthBtn" title="이전 달">&#9664;</button>
             <span id="calendarMonth">2025.03</span>
@@ -76,12 +77,30 @@
             <div class="today-date" id="todayDate">오늘: 2025.03.13</div>
         </div>
         <table class="month-view" id="calendarBody">
-            <!-- 캘린더 날짜 버튼들이 렌더링됨 -->
+            <!-- 캘린더 헤더와 날짜 버튼들이 렌더링됨 -->
         </table>
-        <!-- 하단 일정 목록 (클라이언트 사이드 이벤트 관리; DB 테이블 필요 없음) -->
+        <!-- 하단 일정 목록 -->
         <div id="monthEventList">
             <h3>이번 달 일정</h3>
             <ul id="eventList"></ul>
+        </div>
+
+        <!-- 일정 추가/수정 모달 -->
+        <div id="calendarEventModal" class="modal">
+            <div class="modal-content">
+                <span class="close" id="closeCalendarEventModal">&times;</span>
+                <h3 id="calendarEventModalTitle">일정 추가</h3>
+                <p id="selectedDateDisplay"></p>
+                <form id="calendarEventForm">
+                    <label for="eventTitleInput">제목:</label>
+                    <input type="text" id="eventTitleInput" name="eventTitle" required>
+                    <br>
+                    <label for="eventDescInput">설명:</label>
+                    <input type="text" id="eventDescInput" name="eventDesc">
+                    <br>
+                    <button type="submit">저장</button>
+                </form>
+            </div>
         </div>
     </div>
 </div>
@@ -244,13 +263,13 @@
             <!-- 방문 유형 -->
             <label for="visitType">방문 유형:</label>
             <select id="visitType" name="visitType">
+                <option value="검진">검진</option>
+                <option value="상담">상담</option>
                 <option value="외래">외래</option>
                 <option value="입원">입원</option>
                 <option value="응급">응급</option>
                 <option value="재진">재진</option>
                 <option value="진료예약">진료예약</option>
-                <option value="상담">상담</option>
-                <option value="검진">검진</option>
                 <option value="기타">기타</option>
             </select>
 
@@ -929,6 +948,173 @@
                 formMessage.textContent = "환자 등록 중 오류 발생";
             });
     });
+</script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        document.getElementById("updateAllBtn").addEventListener("click", function() {
+            const checkedRadios = document.querySelectorAll(".status-radio:checked");
+            const updatePromises = [];
+            checkedRadios.forEach(function(radio) {
+                const appointmentId = radio.getAttribute("data-appointment-id");
+                const newStatus = radio.value;
+                if (!appointmentId) return;
+                const promise = fetch('/appointment/updateStatus', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: 'appointmentId=' + encodeURIComponent(appointmentId) +
+                        '&status=' + encodeURIComponent(newStatus)
+                }).then(response => response.json());
+                updatePromises.push(promise);
+            });
+
+            Promise.all(updatePromises)
+                .then(results => {
+                    let allSuccess = results.every(r => r.success);
+                    if (allSuccess) {
+                        alert("예약 상태가 모두 업데이트되었습니다.");
+                        location.reload();
+                    } else {
+                        alert("일부 예약 상태 업데이트에 실패하였습니다.");
+                    }
+                })
+                .catch(error => {
+                    console.error("예약 상태 업데이트 중 오류 발생:", error);
+                    alert("예약 상태 업데이트 중 오류가 발생하였습니다.");
+                });
+        });
+    });
+</script>
+<script>
+    var calendarRole = "nurse";
+
+    // 캘린더 렌더링 함수 (날짜 버튼에 data-date 속성 부여)
+    function renderCalendar() {
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+        const firstDay = new Date(year, month, 1).getDay();
+        const lastDate = new Date(year, month + 1, 0).getDate();
+        const calendarBody = document.getElementById("calendarBody");
+        calendarBody.innerHTML = "";
+        let row = document.createElement("tr");
+        let cellCount = 0;
+        for(let i = 0; i < firstDay; i++){
+            let cell = document.createElement("td");
+            row.appendChild(cell);
+            cellCount++;
+        }
+        for(let d = 1; d <= lastDate; d++){
+            let cell = document.createElement("td");
+            let btn = document.createElement("button");
+            btn.className = 'day-btn';
+            btn.textContent = d;
+            let fullDate = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+            btn.setAttribute("data-date", fullDate);
+            // 오늘 날짜 하이라이트
+            const today = new Date();
+            if (year === today.getFullYear() && month === today.getMonth() && d === today.getDate()) {
+                btn.classList.add("today");
+            }
+            btn.addEventListener('click', function() {
+                openCalendarEventModal(fullDate, calendarRole);
+            });
+            cell.appendChild(btn);
+            row.appendChild(cell);
+            cellCount++;
+            if(cellCount % 7 === 0){
+                calendarBody.appendChild(row);
+                row = document.createElement("tr");
+            }
+        }
+        while(cellCount % 7 !== 0){
+            let cell = document.createElement("td");
+            row.appendChild(cell);
+            cellCount++;
+        }
+        calendarBody.appendChild(row);
+    }
+
+    // 모달 열기: 선택한 날짜와 해당 역할의 일정 조회 후 모달에 세팅
+    function openCalendarEventModal(dateStr, role) {
+        document.getElementById('selectedDateDisplay').textContent = dateStr;
+        document.getElementById('eventTitleInput').value = "";
+        document.getElementById('eventDescInput').value = "";
+        document.getElementById('calendarEventModalTitle').textContent = "일정 추가";
+
+        fetch('/calendar/' + role + '/events?year=' + dateStr.split('-')[0] + '&month=' + dateStr.split('-')[1])
+            .then(response => response.json())
+            .then(events => {
+                let event = events.find(e => e.eventDate === dateStr);
+                if (event) {
+                    document.getElementById('eventTitleInput').value = event.title;
+                    document.getElementById('eventDescInput').value = event.description;
+                    document.getElementById('calendarEventModalTitle').textContent = "일정 수정";
+                }
+                document.getElementById("calendarEventModal").style.display = "block";
+            })
+            .catch(error => {
+                console.error("이벤트 조회 오류:", error);
+                document.getElementById("calendarEventModal").style.display = "block";
+            });
+    }
+
+    // 모달 닫기
+    document.getElementById("closeCalendarEventModal").onclick = function() {
+        document.getElementById("calendarEventModal").style.display = "none";
+    };
+
+    // 일정 저장 (생성 또는 수정)
+    document.getElementById("calendarEventForm").addEventListener("submit", function(e) {
+        e.preventDefault();
+        const dateStr = document.getElementById("selectedDateDisplay").textContent;
+        const title = document.getElementById("eventTitleInput").value;
+        const desc = document.getElementById("eventDescInput").value;
+        fetch('/calendar/' + calendarRole + '/save', {
+            method: "POST",
+            headers: {"Content-Type": "application/x-www-form-urlencoded"},
+            body: "eventDate=" + encodeURIComponent(dateStr) +
+                "&title=" + encodeURIComponent(title) +
+                "&description=" + encodeURIComponent(desc)
+        })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                document.getElementById("calendarEventModal").style.display = "none";
+                refreshMonthlyEventList();
+            })
+            .catch(error => {
+                console.error("일정 저장 오류:", error);
+                alert("일정 저장 중 오류 발생");
+            });
+    });
+
+    // 월간 일정 리스트 갱신 (현재 달의 이벤트를 리스트로 출력)
+    function refreshMonthlyEventList() {
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth() + 1; // 1~12
+        fetch('/calendar/' + calendarRole + '/events?year=' + year + '&month=' + month)
+            .then(response => response.json())
+            .then(events => {
+                const listElem = document.getElementById("eventList");
+                listElem.innerHTML = "";
+                events.forEach(event => {
+                    let li = document.createElement("li");
+                    li.textContent = event.eventDate + " : " + event.title;
+                    listElem.appendChild(li);
+                });
+            })
+            .catch(error => {
+                console.error("월간 일정 조회 오류:", error);
+            });
+    }
+
+    // 호출, 캘린더 초기화, 등 기존의 캘린더 스크립트 호출
+    updateCalendarBanner();
+    renderCalendar();
+    refreshMonthlyEventList();
+
 </script>
 </body>
 </html>

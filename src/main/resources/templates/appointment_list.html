@@ -1,41 +1,75 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8">
   <title>Appointment List Fragment</title>
+  <style>
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    thead tr {
+      background: #f0f0f0;
+    }
+    th, td {
+      padding: 8px;
+      border: 1px solid #ddd;
+      text-align: center;
+    }
+    .update-all-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      padding: 8px 12px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+  </style>
 </head>
 <body>
 <div th:fragment="listFragment">
-  <table style="width:100%; border-collapse: collapse;">
+  <button class="update-all-btn" id="updateAllBtn">수정</button>
+  <table>
     <thead>
-    <tr style="background: #f0f0f0;">
-      <th>예약 ID</th>
+    <tr>
       <th>환자 이름</th>
       <th>예약 날짜</th>
       <th>예약 시간</th>
       <th>상태</th>
       <th>비고</th>
-      <th>조작</th>
     </tr>
     </thead>
     <tbody>
     <tr th:each="appointment : ${appointments}">
-      <td th:text="${appointment.appointmentId}">1</td>
-      <td th:text="${appointment.patientName}">홍길동</td>
+      <td th:text="${appointment.patientName}"
+          th:data-appointment-id="${appointment.appointmentId}">홍길동</td>
       <td th:text="${appointment.appointmentDate}">2025-03-20</td>
       <td th:text="${appointment.appointmentTime}">09:00</td>
       <td>
-        <span th:text="${appointment.status}">예약</span>
-        <select class="status-select" th:attr="data-appointment-id=${appointment.appointmentId}">
-          <option value="예약" th:selected="${appointment.status == '예약'}">예약</option>
-          <option value="완료" th:selected="${appointment.status == '완료'}">완료</option>
-          <option value="취소" th:selected="${appointment.status == '취소'}">취소</option>
-        </select>
+        <!-- 각 예약의 상태를 라디오 버튼으로 표시 -->
+        <label>
+          <input type="radio" th:name="'status_' + ${appointment.appointmentId}" value="예약"
+                 th:checked="${appointment.status == '예약'}"
+                 class="status-radio"
+                 th:attr="data-appointment-id='${appointment.appointmentId}'" />예약
+        </label>
+        <label>
+          <input type="radio" th:name="'status_' + ${appointment.appointmentId}" value="완료"
+                 th:checked="${appointment.status == '완료'}"
+                 class="status-radio"
+                 th:attr="data-appointment-id='${appointment.appointmentId}'" />완료
+        </label>
+        <label>
+          <input type="radio" th:name="'status_' + ${appointment.appointmentId}" value="취소"
+                 th:checked="${appointment.status == '취소'}"
+                 class="status-radio"
+                 th:attr="data-appointment-id='${appointment.appointmentId}'" />취소
+        </label>
       </td>
       <td th:text="${appointment.remarks}"></td>
-      <td>
-        <button class="update-status-btn" th:attr="data-appointment-id=${appointment.appointmentId}">상태 변경</button>
-      </td>
     </tr>
     </tbody>
   </table>

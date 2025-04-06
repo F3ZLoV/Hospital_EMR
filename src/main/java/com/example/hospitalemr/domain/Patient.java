@@ -32,11 +32,21 @@ public class Patient {
     @Column(name = "reception_time", columnDefinition = "TIMESTAMP DEFAULT NULL")
     private LocalDateTime receptionTime;
 
+    @Column(name = "consultation_memo", columnDefinition = "TEXT")
+    private String consultationMemo;
 
     public Patient() {}
 
     public boolean isCalled() {
         return called;
+    }
+
+    public String getConsultationMemo() {
+        return consultationMemo;
+    }
+
+    public void setConsultationMemo(String consultationMemo) {
+        this.consultationMemo = consultationMemo;
     }
 
     public void setCalled(boolean called) {

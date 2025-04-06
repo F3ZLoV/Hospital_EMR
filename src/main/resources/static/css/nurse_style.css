@@ -483,3 +483,34 @@ body {
 #receptionForm button[type="submit"]:hover {
     background-color: #0056b3;
 }
+
+.day-btn {
+    width: 100%;
+    padding: 4px;
+    cursor: pointer;
+    background: none;
+    border: none;
+}
+
+.day-btn.today {
+    border: 2px solid green;
+    border-radius: 8px;
+}
+
+.day-btn.sunday {
+    color: red;
+}
+
+.day-btn.saturday {
+    color: blue;
+}
+
+.day-btn.event {
+    color: green;
+}
+
+.event-info {
+    font-size: 10px;
+    margin-top: 2px;
+    color: green;
+}
