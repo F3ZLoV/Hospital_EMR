@@ -71,7 +71,8 @@ public class AppointmentController {
     // 예약 상태 업데이트 (완료, 취소로 변경)
     @PostMapping("/updateStatus")
     @ResponseBody
-    public Map<String, Object> updateAppointmentStatus(@RequestParam int appointmentId, @RequestParam String status) {
+    public Map<String, Object> updateAppointmentStatus(@RequestParam int appointmentId,
+                                                       @RequestParam String status) {
         Map<String, Object> result = new HashMap<>();
         try {
             Appointment appointment = appointmentRepository.findById(appointmentId)
@@ -86,4 +87,27 @@ public class AppointmentController {
         }
         return result;
     }
+
+    @PostMapping("/updateMultipleStatus")
+    @ResponseBody
+    public Map<String, Object> updateMultipleStatus(@RequestBody List<Map<String, String>> updates) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            for (Map<String, String> entry : updates) {
+                int id = Integer.parseInt(entry.get("appointmentId"));
+                String status = entry.get("status");
+                Appointment appointment = appointmentRepository.findById(id)
+                        .orElseThrow(() -> new RuntimeException("예약 없음: " + id));
+                appointment.setStatus(status);
+                appointmentRepository.save(appointment);
+            }
+            result.put("success", true);
+            result.put("message", "모든 상태 업데이트 성공");
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("message", e.getMessage());
+        }
+        return result;
+    }
+
 }

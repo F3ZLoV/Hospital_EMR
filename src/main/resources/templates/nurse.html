@@ -951,43 +951,6 @@
 </script>
 
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        document.getElementById("updateAllBtn").addEventListener("click", function() {
-            const checkedRadios = document.querySelectorAll(".status-radio:checked");
-            const updatePromises = [];
-            checkedRadios.forEach(function(radio) {
-                const appointmentId = radio.getAttribute("data-appointment-id");
-                const newStatus = radio.value;
-                if (!appointmentId) return;
-                const promise = fetch('/appointment/updateStatus', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded'
-                    },
-                    body: 'appointmentId=' + encodeURIComponent(appointmentId) +
-                        '&status=' + encodeURIComponent(newStatus)
-                }).then(response => response.json());
-                updatePromises.push(promise);
-            });
-
-            Promise.all(updatePromises)
-                .then(results => {
-                    let allSuccess = results.every(r => r.success);
-                    if (allSuccess) {
-                        alert("예약 상태가 모두 업데이트되었습니다.");
-                        location.reload();
-                    } else {
-                        alert("일부 예약 상태 업데이트에 실패하였습니다.");
-                    }
-                })
-                .catch(error => {
-                    console.error("예약 상태 업데이트 중 오류 발생:", error);
-                    alert("예약 상태 업데이트 중 오류가 발생하였습니다.");
-                });
-        });
-    });
-</script>
-<script>
     var calendarRole = "nurse";
 
     // 캘린더 렌더링 함수 (날짜 버튼에 data-date 속성 부여)
@@ -1114,6 +1077,32 @@
     updateCalendarBanner();
     renderCalendar();
     refreshMonthlyEventList();
+
+</script>
+<script>
+    document.addEventListener("click", function (event) {
+        if (event.target.classList.contains("update-status-btn")) {
+            const id = event.target.getAttribute("data-id");
+            const selectedStatus = document.querySelector(`input[name="status_${id}"]:checked`).value;
+
+            fetch(`/appointment/updateStatus?appointmentId=${id}&status=${encodeURIComponent(selectedStatus)}`, {
+                method: "POST"
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        alert("상태가 업데이트되었습니다.");
+                        document.getElementById("openAppointmentListModalBtn").click(); // 다시 로딩
+                    } else {
+                        alert("업데이트 실패: " + data.message);
+                    }
+                })
+                .catch(err => {
+                    console.error("에러 발생:", err);
+                    alert("통신 오류");
+                });
+        }
+    });
 
 </script>
 </body>

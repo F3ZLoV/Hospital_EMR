@@ -98,6 +98,7 @@
                             <th style="width:15%;">용량</th>
                             <th style="width:15%;">일수</th>
                             <th style="width:15%;">급여</th>
+                            <th style="width:10%;">처방 시간</th>
                             <th style="width:10%;">삭제</th>
                         </tr>
                         </thead>
@@ -106,7 +107,7 @@
                         </tbody>
                         <tfoot>
                         <tr>
-                            <td colspan="6">
+                            <td colspan="7">
                                 <button type="button" id="addPrescriptionRowBtn" style="width:100%; padding:10px; font-size:1.1rem;">+ 추가</button>
                             </td>
                         </tr>
@@ -736,28 +737,97 @@
         const tbody = document.getElementById("prescriptionTable").getElementsByTagName("tbody")[0];
         const newRow = document.createElement("tr");
         newRow.innerHTML = `
-        <td><input type="text" class="prescription-code" style="width:95%;" placeholder="명칭 입력 시 자동 생성"/></td>
+        <td><input type="text" class="prescription-code" style="width:95%;"/></td>
         <td>
             <input type="text" class="prescription-name" style="width:95%;" placeholder="약물 명칭">
-            <div class="autocomplete-suggestions" style="display:none; border: 1px solid #ccc; max-height:150px; overflow-y:auto; background:#fff;"></div>
+            <div class="autocomplete-suggestions" style="display:none; border:1px solid #ccc; max-height:150px; overflow-y:auto; background:#fff;"></div>
         </td>
-        <td><input type="text" class="prescription-dosage" style="width:95%;" placeholder="처방 용량"/></td>
-        <td><input type="number" class="prescription-duration" style="width:95%;" placeholder="복용 일수"/></td>
+        <td>
+            <input type="number" class="prescription-dosage-value" style="width:50px;" placeholder="용량">
+            <select class="prescription-dosage-unit" style="width:40px;">
+                <option value="ml">ml</option>
+                <option value="mg">mg</option>
+                <option value="개">개</option>
+            </select>
+        </td>
+        <td><input type="number" class="prescription-duration" style="width:95%;" placeholder="일수"/></td>
         <td>
             <select class="prescription-insurance" style="width:95%;">
                 <option value="true">급여</option>
                 <option value="false">비급여</option>
             </select>
         </td>
+        <td>
+            <select class="prescription-timing" style="width:95%;">
+                <option value="식전 30분">식전 30분</option>
+                <option value="식후 30분">식후 30분</option>
+            </select>
+        </td>
         <td><button type="button" class="deletePrescriptionRowBtn" style="width:100%;">삭제</button></td>
     `;
         tbody.appendChild(newRow);
-        // 새로 추가된 "prescription-name" 입력란에 자동완성 기능 등록
         const newInput = newRow.querySelector(".prescription-name");
         if (newInput) {
             setupAutocomplete(newInput);
         }
     });
+
+    function addPrescriptionRow() {
+        const tbody = document.getElementById("prescriptionTable").querySelector("tbody");
+        const newRow = document.createElement("tr");
+        newRow.innerHTML = `
+        <td><input type="text" class="prescription-code" style="width:95%;"/></td>
+        <td>
+            <input type="text" class="prescription-name" style="width:95%;" placeholder="약물 명칭">
+            <div class="autocomplete-suggestions" style="display:none; border:1px solid #ccc; max-height:150px; overflow-y:auto; background:#fff;"></div>
+        </td>
+        <td>
+            <input type="number" class="prescription-dosage-value" style="width:50px;" placeholder="용량">
+            <select class="prescription-dosage-unit" style="width:40px;">
+                <option value="ml">ml</option>
+                <option value="mg">mg</option>
+                <option value="개">개</option>
+            </select>
+        </td>
+        <td><input type="number" class="prescription-duration" style="width:95%;" placeholder="일수"/></td>
+        <td>
+            <select class="prescription-insurance" style="width:95%;">
+                <option value="true">급여</option>
+                <option value="false">비급여</option>
+            </select>
+        </td>
+        <td>
+            <select class="prescription-timing" style="width:95%;">
+                <option value="식전 30분">식전 30분</option>
+                <option value="식후 30분">식후 30분</option>
+            </select>
+        </td>
+        <td><button type="button" class="deletePrescriptionRowBtn" style="width:100%;">삭제</button></td>
+    `;
+        tbody.appendChild(newRow);
+
+        // 마지막 셀의 처방 시간(select.prescription-timing)에 Tab 또는 Enter 이벤트
+        const timingSelect = newRow.querySelector(".prescription-timing");
+        timingSelect.addEventListener("keydown", function(e) {
+            if (e.key === "Tab" || e.key === "Enter") {
+                e.preventDefault();
+                addPrescriptionRow();
+                setTimeout(() => {
+                    // 새로 추가된 행의 첫 번째 입력란 (코드)로 포커스 이동
+                    const rows = document.querySelectorAll("#prescriptionTable tbody tr");
+                    if (rows.length > 0) {
+                        rows[rows.length - 1].querySelector(".prescription-code").focus();
+                    }
+                }, 100);
+            }
+        });
+    }
+
+    document.getElementById("addPrescriptionRowBtn").addEventListener("click", addPrescriptionRow);
+
+    if (!document.querySelector("#prescriptionTable tbody tr")) {
+        addPrescriptionRow();
+    }
 
     // 처방 행 삭제
     document.getElementById("prescriptionTable").addEventListener("click", function(e) {
@@ -792,26 +862,26 @@
                     const prescriptionRows = document.querySelectorAll("#prescriptionTable tbody tr");
                     const prescriptions = [];
                     prescriptionRows.forEach(function(row) {
-                        // 각 입력값을 trim() 처리하여 공백 제거
-                        const code = (row.querySelector(".prescription-code").value || "").trim();
-                        const name = (row.querySelector(".prescription-name").value || "").trim();
-                        const dosage = (row.querySelector(".prescription-dosage").value || "").trim();
-                        const durationVal = (row.querySelector(".prescription-duration").value || "").trim();
-                        const instruction = (row.querySelector(".prescription-instruction")?.value || "").trim();
-                        // insurance는 select의 값을 그대로 사용 (기본값 "true" 혹은 "false")
+                        const code = row.querySelector(".prescription-code").value.trim();
+                        const name = row.querySelector(".prescription-name").value.trim();
+                        const dosageValue = row.querySelector(".prescription-dosage-value").value.trim();
+                        const unitSelect = row.querySelector(".prescription-dosage-unit");
+                        const dosageUnit = unitSelect ? unitSelect.value : "";
+                        const dosage = dosageValue ? dosageValue + dosageUnit : "";
+                        const duration = row.querySelector(".prescription-duration").value.trim();
                         const insuranceSelect = row.querySelector(".prescription-insurance");
                         const insuranceValue = insuranceSelect ? (insuranceSelect.value === "true") : false;
-
-                        // 단, 약물 명칭 (name)이 2글자 이상 입력되어야 유효한 처방으로 간주 (원하는 조건에 맞게 수정)
-                        if (name.length >= 2) {
+                        const timingValue = row.querySelector(".prescription-timing").value;
+                        // 최소 하나의 필드가 채워져 있으면 추가
+                        if (code || name || dosage || duration || timingValue) {
                             prescriptions.push({
                                 visitId: currentVisitId,
                                 drugCode: code,
                                 drugName: name,
                                 dosage: dosage,
-                                days: durationVal ? parseInt(durationVal) : null,
+                                days: duration ? parseInt(duration) : null,
                                 insuranceYn: insuranceValue,
-                                instruction: instruction
+                                timing: timingValue
                             });
                         }
                     });
@@ -976,28 +1046,10 @@
         }
     }
 
-    // 현재 진료중인 환자의 정보가 로드되면 역대 기록도 불러옴
-    // 예: loadCurrentConsultationPatient() 에서 currentPatientId를 받아온 후 호출
-    // (currentPatientId는 /medicalvisit/currentPatient 엔드포인트에서 반환한 값)
     if (currentPatientId) {
         loadVisitHistory(currentPatientId);
     }
 
-    // 기본 텍스트 포맷팅 함수 (재정의)
-    function formatText(command) {
-        document.execCommand(command, false, null);
-    }
-    function changeFontSize(size) {
-        document.execCommand("fontSize", false, "7");
-        var editor = document.getElementById("recordEditor");
-        var fontElements = editor.getElementsByTagName("font");
-        for (var i = 0; i < fontElements.length; i++) {
-            if (fontElements[i].getAttribute("size") === "7") {
-                fontElements[i].removeAttribute("size");
-                fontElements[i].style.fontSize = size + "px";
-            }
-        }
-    }
 </script>
 <script>
     let drugData = [];
@@ -1005,7 +1057,7 @@
     function loadDrugData() {
         Papa.parse("/valid_ENT_codes.csv", {
             download: true,
-            header: true, // CSV 파일에 헤더가 있으므로 true
+            header: true,
             complete: function(results) {
                 drugData = results.data; // CSV의 각 행은 객체로 저장됩니다.
                 console.log("Drug Data loaded:", drugData);
@@ -1017,6 +1069,12 @@
     }
 
     window.addEventListener("DOMContentLoaded", loadDrugData);
+    document.addEventListener("DOMContentLoaded", function() {
+        const inputs = document.querySelectorAll(".prescription-name");
+        inputs.forEach(input => {
+            setupAutocomplete(input);
+        });
+    });
 
     function setupAutocomplete(inputElement) {
         const suggestionBox = document.createElement('div');

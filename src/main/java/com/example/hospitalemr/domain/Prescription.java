@@ -35,10 +35,22 @@ public class Prescription {
     @Column(name = "updated_at", insertable = false, updatable = false)
     private Timestamp updatedAt;
 
+    @Column(name = "timing")
+    private String timing;
+
     // 기본 생성자
     public Prescription() {}
 
     // Getters and Setters
+
+
+    public String getTiming() {
+        return timing;
+    }
+
+    public void setTiming(String timing) {
+        this.timing = timing;
+    }
 
     public Long getPrescriptionId() {
         return prescriptionId;
