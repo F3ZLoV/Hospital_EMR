@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>이비인후과 EMR - 의사 메인화면</title>
     <link rel="stylesheet" th:href="@{/css/doctor_style.css}" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 </head>
 <body>
 <div class="header">
@@ -65,6 +66,7 @@
                 <!-- Save 메모 버튼 (개별 업데이트를 원한다면) -->
             </div>
             <!-- 우측: 진료 기록 작성 카드 -->
+            <!-- 진료 기록 작성 카드 내부 -->
             <div class="record-card">
                 <div class="toolbar">
                     <button type="button" onclick="formatText('bold')"><strong>B</strong></button>
@@ -84,15 +86,78 @@
                     </select>
                 </div>
                 <div id="recordEditor" class="editor" contenteditable="true" placeholder="진료 기록을 작성하세요."></div>
-                <!-- Save 버튼 -->
-                <button id="saveNotesBtn" style="margin-top:10px; padding:8px 12px;">저장</button>
+
+                <!-- 처방 입력 섹션 -->
+                <div class="prescription-section">
+                    <h4>처방</h4>
+                    <table id="prescriptionTable" style="width:100%; border-collapse: collapse;">
+                        <thead>
+                        <tr>
+                            <th style="width:15%;">코드</th>
+                            <th style="width:30%;">명칭</th>
+                            <th style="width:15%;">용량</th>
+                            <th style="width:15%;">일수</th>
+                            <th style="width:15%;">급여</th>
+                            <th style="width:10%;">삭제</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <!-- 여기에 처방 입력 행들이 추가됩니다. -->
+                        </tbody>
+                        <tfoot>
+                        <tr>
+                            <td colspan="6">
+                                <button type="button" id="addPrescriptionRowBtn" style="width:100%; padding:10px; font-size:1.1rem;">+ 추가</button>
+                            </td>
+                        </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <!-- 진료 완료 버튼 (기존 저장 버튼 대신) -->
+                <button id="completeVisitBtn" style="margin-top:10px; padding:8px 12px;">진료 완료</button>
             </div>
         </div>
+
+        <!-- 역대 진료 기록 섹션 -->
+        <div class="history-container" style="display: flex; gap: 10px;">
+            <div class="visit-history-list">
+                <ul id="visitHistoryList" style="width: 180px; border: 1px solid #ccc; background: #fff;">
+                    <!-- 역대 진료 기록 날짜 목록이 동적으로 추가됩니다. -->
+                </ul>
+            </div>
+            <div class="visit-history-detail" style="flex: 1; border: 1px solid #ccc; padding: 10px; background: #fff;">
+                <h4>진료 날짜: <span id="historyVisitDate">-</span> <span id="historyVisitTime"></span></h4>
+                <div>
+                    <strong>진료 메모:</strong>
+                    <div id="historyMemoSection"></div>
+                </div>
+                <div style="margin-top:10px;">
+                    <strong>진료 기록:</strong>
+                    <div id="historyNotesSection" class="record-html"></div>
+                </div>
+                <div style="margin-top:10px;">
+                    <strong>처방 내역:</strong>
+                    <table id="historyPrescriptionTable" style="width:100%; border-collapse: collapse; margin-top:4px;">
+                        <thead>
+                        <tr style="background: #eee;">
+                            <th style="width:15%;">코드</th>
+                            <th style="width:30%;">명칭</th>
+                            <th style="width:15%;">용량</th>
+                            <th style="width:15%;">일수</th>
+                            <th style="width:15%;">급여</th>
+                        </tr>
+                        </thead>
+                        <tbody id="historyPrescriptionTbody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <!-- 우측 배너 -->
     <div class="right-banner">
-        <!-- 캘린더 영역 -->
         <div class="calendar-banner">
             <button id="prevMonthBtn" title="이전 달">&#9664;</button>
             <span id="calendarMonth">2025.03</span>
@@ -101,39 +166,42 @@
         </div>
         <table class="month-view" id="monthView">
             <thead>
-            <tr>
-                <th>일</th>
-                <th>월</th>
-                <th>화</th>
-                <th>수</th>
-                <th>목</th>
-                <th>금</th>
-                <th>토</th>
-            </tr>
+                <tr>
+                    <th>일</th>
+                    <th>월</th>
+                    <th>화</th>
+                    <th>수</th>
+                    <th>목</th>
+                    <th>금</th>
+                    <th>토</th>
+                </tr>
             </thead>
-            <tbody id="calendarBody"></tbody>
+            <tbody id="calendarBody">
+            </tbody>
         </table>
-
-        <!-- 하단 일정 목록 영역 -->
         <div id="monthEventList">
             <h3>이번 달 일정</h3>
-            <ul id="eventList"></ul>
+            <ul id="eventList" style="list-style: none; padding: 0;"></ul>
         </div>
 
-        <!-- 일정 추가 모달창 -->
+        <!-- 일정 추가/수정 모달창 -->
         <div id="calendarEventModal" class="modal">
-            <div class="modal-content">
-                <span class="close" id="closeCalendarEventModal">&times;</span>
+            <div class="modal-content" style="background:#fff; padding:20px; border-radius:4px; width:300px; margin:100px auto; position:relative;">
+                <span class="close" id="closeCalendarEventModal" style="position:absolute; top:8px; right:12px; cursor:pointer;">&times;</span>
                 <h3 id="calendarEventModalTitle">일정 추가</h3>
-                <p id="selectedDateDisplay"></p>
+                <p id="selectedDateDisplay" style="font-weight: bold;"></p>
                 <form id="calendarEventForm">
-                    <label for="eventTitleInput">제목:</label>
-                    <input type="text" id="eventTitleInput" name="eventTitle" required>
-                    <br>
-                    <label for="eventDescInput">내용:</label>
-                    <textarea id="eventDescInput" name="eventDesc"></textarea>
-                    <br>
-                    <button type="submit">저장</button>
+                    <div>
+                        <label for="eventTitleInput">제목:</label><br>
+                        <input type="text" id="eventTitleInput" name="eventTitle" required style="width:100%; box-sizing:border-box;">
+                    </div>
+                    <div style="margin-top:8px;">
+                        <label for="eventDescInput">내용:</label><br>
+                        <textarea id="eventDescInput" name="eventDesc" style="width:100%; box-sizing:border-box;"></textarea>
+                    </div>
+                    <div style="margin-top:12px; text-align:right;">
+                        <button type="submit" style="padding:6px 12px;">저장</button>
+                    </div>
                 </form>
             </div>
         </div>
@@ -366,14 +434,14 @@
 </script>
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-        // doctorWaitingList 영역에 있는 호출 버튼에 이벤트 바인딩 (동적 로드라면 delegate 방식 사용)
-        document.getElementById("doctorWaitingList").addEventListener("click", function(e) {
+        // 올바른 컨테이너 ID인 "doctorPatientList"에 이벤트 위임
+        document.getElementById("doctorPatientList").addEventListener("click", function(e) {
             if (e.target && e.target.classList.contains("call-btn")) {
                 const patientId = e.target.getAttribute("data-id");
                 if (!patientId) return;
                 // 호출 이벤트를 localStorage에 등록 (다른 탭에서 storage 이벤트 발생)
                 localStorage.setItem("callPatient", JSON.stringify({ patientId: patientId }));
-                // (원하는 경우 호출 후 버튼 비활성화 처리도 할 수 있습니다.)
+                // 호출 후 버튼을 비활성화하거나 UI 업데이트 추가 가능
             }
         });
     });
@@ -435,19 +503,25 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    currentPatientId = data.patientId;
+                    currentVisitId = data.visitId;
+                    currentPatientId = data.patientId; // 엔드포인트에서 patientId를 함께 반환해야 함
+                    // 환자 정보 UI 업데이트
                     document.getElementById("patientName").textContent = data.patientName;
                     document.getElementById("patientAge").textContent = data.patientAge;
                     document.getElementById("patientGender").textContent = data.patientGender;
                     document.getElementById("patientPhone").textContent = data.patientPhone;
+                    // currentPatientId가 존재하면 역대 진료 기록도 불러옴
+                    loadVisitHistory(currentPatientId);
                 } else {
-                    console.error("현재 진료중인 환자 정보를 가져오지 못했습니다:", data.message);
+                    // 현재 진료중인 환자가 없을 경우 안내 문구 표시
+                    const consultationContainer = document.querySelector(".consultation-container");
+                    consultationContainer.innerHTML = '<p style="color: gray; text-align: center; font-style: italic; font-size: 1.2rem;">환자를 호출해 주세요.</p>';
                 }
             })
             .catch(error => console.error("현재 환자 조회 오류:", error));
     }
 
-    // 페이지 로드 시 현재 진료중인 환자 정보 불러오기
+    // 페이지 로드시 호출
     loadCurrentConsultationPatient();
 
     // Save 버튼 클릭 시, 환자 상담 메모와 진료 기록을 업데이트
@@ -633,6 +707,385 @@
     updateCalendarBanner();
     renderCalendar();
     refreshMonthlyEventList();
+</script>
+<script>
+    // 전역 변수: 현재 진료 기록의 visitId와 환자의 patientId
+    var currentVisitId = null;
+    var currentPatientId = null;
+
+    // 페이지 로드시 현재 진료중인 환자의 정보와 최신 진료 기록 visitId, patientId 가져오기
+    fetch('/medicalvisit/currentPatient')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                currentVisitId = data.visitId;
+                currentPatientId = data.patientId; // 엔드포인트에서 patientId도 함께 반환해야 함
+                // 환자 정보 UI 업데이트
+                document.getElementById("patientName").textContent = data.patientName;
+                document.getElementById("patientAge").textContent = data.patientAge;
+                document.getElementById("patientGender").textContent = data.patientGender;
+                document.getElementById("patientPhone").textContent = data.patientPhone;
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(error => console.error("현재 진료중인 환자 정보 조회 오류:", error));
+
+    // 처방 행 추가
+    document.getElementById("addPrescriptionRowBtn").addEventListener("click", function() {
+        const tbody = document.getElementById("prescriptionTable").getElementsByTagName("tbody")[0];
+        const newRow = document.createElement("tr");
+        newRow.innerHTML = `
+        <td><input type="text" class="prescription-code" style="width:95%;" placeholder="명칭 입력 시 자동 생성"/></td>
+        <td>
+            <input type="text" class="prescription-name" style="width:95%;" placeholder="약물 명칭">
+            <div class="autocomplete-suggestions" style="display:none; border: 1px solid #ccc; max-height:150px; overflow-y:auto; background:#fff;"></div>
+        </td>
+        <td><input type="text" class="prescription-dosage" style="width:95%;" placeholder="처방 용량"/></td>
+        <td><input type="number" class="prescription-duration" style="width:95%;" placeholder="복용 일수"/></td>
+        <td>
+            <select class="prescription-insurance" style="width:95%;">
+                <option value="true">급여</option>
+                <option value="false">비급여</option>
+            </select>
+        </td>
+        <td><button type="button" class="deletePrescriptionRowBtn" style="width:100%;">삭제</button></td>
+    `;
+        tbody.appendChild(newRow);
+        // 새로 추가된 "prescription-name" 입력란에 자동완성 기능 등록
+        const newInput = newRow.querySelector(".prescription-name");
+        if (newInput) {
+            setupAutocomplete(newInput);
+        }
+    });
+
+    // 처방 행 삭제
+    document.getElementById("prescriptionTable").addEventListener("click", function(e) {
+        if (e.target && e.target.classList.contains("deletePrescriptionRowBtn")) {
+            const row = e.target.closest("tr");
+            row.parentNode.removeChild(row);
+        }
+    });
+
+    // 진료 완료 버튼 클릭: 진료 기록(메모, 기록) 및 처방 저장 후 환자 complete 처리
+    document.getElementById("completeVisitBtn").addEventListener("click", function() {
+        var memo = document.getElementById("consultationMemo").value;
+        var record = document.getElementById("recordEditor").innerHTML;
+
+        if (!currentVisitId || !currentPatientId) {
+            alert("진료 기록 업데이트할 대상이 없습니다.");
+            return;
+        }
+
+        // 1. 진료 기록 업데이트 (/medicalvisit/updateNotes)
+        fetch('/medicalvisit/updateNotes', {
+            method: "POST",
+            headers: {"Content-Type": "application/x-www-form-urlencoded"},
+            body: "visitId=" + encodeURIComponent(currentVisitId) +
+                "&memo=" + encodeURIComponent(memo) +
+                "&record=" + encodeURIComponent(record)
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // 2. 처방 데이터 수집 (수정된 부분)
+                    const prescriptionRows = document.querySelectorAll("#prescriptionTable tbody tr");
+                    const prescriptions = [];
+                    prescriptionRows.forEach(function(row) {
+                        // 각 입력값을 trim() 처리하여 공백 제거
+                        const code = (row.querySelector(".prescription-code").value || "").trim();
+                        const name = (row.querySelector(".prescription-name").value || "").trim();
+                        const dosage = (row.querySelector(".prescription-dosage").value || "").trim();
+                        const durationVal = (row.querySelector(".prescription-duration").value || "").trim();
+                        const instruction = (row.querySelector(".prescription-instruction")?.value || "").trim();
+                        // insurance는 select의 값을 그대로 사용 (기본값 "true" 혹은 "false")
+                        const insuranceSelect = row.querySelector(".prescription-insurance");
+                        const insuranceValue = insuranceSelect ? (insuranceSelect.value === "true") : false;
+
+                        // 단, 약물 명칭 (name)이 2글자 이상 입력되어야 유효한 처방으로 간주 (원하는 조건에 맞게 수정)
+                        if (name.length >= 2) {
+                            prescriptions.push({
+                                visitId: currentVisitId,
+                                drugCode: code,
+                                drugName: name,
+                                dosage: dosage,
+                                days: durationVal ? parseInt(durationVal) : null,
+                                insuranceYn: insuranceValue,
+                                instruction: instruction
+                            });
+                        }
+                    });
+                    let prescriptionPromise = Promise.resolve({ success: true });
+                    if (prescriptions.length > 0) {
+                        // 3. 처방 저장 (/prescription/save)
+                        prescriptionPromise = fetch('/prescription/save', {
+                            method: "POST",
+                            headers: {"Content-Type": "application/json"},
+                            body: JSON.stringify(prescriptions)
+                        }).then(response => response.json());
+                    }
+                    return prescriptionPromise;
+                } else {
+                    throw new Error("진료 기록 업데이트 실패: " + data.message);
+                }
+            })
+            .then(presData => {
+                if (!presData.success && presData.message) {
+                    alert("진료 기록은 저장되었으나 처방 저장에 실패하였습니다: " + presData.message);
+                }
+                // 4. 환자 complete 처리: waiting, called 플래그를 false로 업데이트
+                return fetch('/patient/call/complete', {
+                    method: "POST",
+                    headers: {"Content-Type": "application/x-www-form-urlencoded"},
+                    body: "patientId=" + encodeURIComponent(currentPatientId)
+                });
+            })
+            .then(response => response.json())
+            .then(completeData => {
+                if (completeData.success) {
+                    alert("진료 기록, 처방 및 환자 완료 처리가 성공적으로 이루어졌습니다.");
+                    location.reload();
+                } else {
+                    alert("진료 완료 처리 실패: " + completeData.message);
+                }
+            })
+            .catch(error => {
+                console.error("진료 완료 처리 중 오류:", error);
+                alert("진료 완료 처리 중 오류가 발생하였습니다.");
+            });
+    });
+
+
+    // 기본 텍스트 포맷팅 함수 (execCommand 사용)
+    function formatText(command) {
+        document.execCommand(command, false, null);
+    }
+
+    // 폰트 크기 변경 함수
+    function changeFontSize(size) {
+        document.execCommand("fontSize", false, "7");
+        var editor = document.getElementById("recordEditor");
+        var fontElements = editor.getElementsByTagName("font");
+        for (var i = 0; i < fontElements.length; i++) {
+            if (fontElements[i].getAttribute("size") === "7") {
+                fontElements[i].removeAttribute("size");
+                fontElements[i].style.fontSize = size + "px";
+            }
+        }
+    }
+
+    // 페이지 로드시 현재 진료중인 환자의 정보와 최신 진료 기록 visitId, patientId 가져오기
+    function loadCurrentConsultationPatient() {
+        fetch('/medicalvisit/currentPatient')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    currentVisitId = data.visitId;
+                    currentPatientId = data.patientId; // 엔드포인트에서 patientId를 함께 반환해야 함
+                    // 환자 정보 업데이트
+                    document.getElementById("patientName").textContent = data.patientName;
+                    document.getElementById("patientAge").textContent = data.patientAge;
+                    document.getElementById("patientGender").textContent = data.patientGender;
+                    document.getElementById("patientPhone").textContent = data.patientPhone;
+                } else {
+                    // 현재 진료중인 환자가 없을 경우, 상담 영역을 안내 문구로 대체
+                    const consultationContainer = document.querySelector(".consultation-container");
+                    consultationContainer.innerHTML = '<p style="color: gray; text-align: center; font-style: italic; font-size: 1.2rem;">환자를 호출해 주세요.</p>';
+                }
+            })
+            .catch(error => console.error("현재 진료중인 환자 정보 조회 오류:", error));
+    }
+
+    // 페이지 로드시 호출
+    loadCurrentConsultationPatient();
+
+    // 역대 진료 기록 로딩: 현재 환자의 patientId로 호출
+    function loadVisitHistory(patientId) {
+        fetch('/medicalvisit/history?patientId=' + encodeURIComponent(patientId))
+            .then(response => response.json())
+            .then(visits => {
+                renderVisitHistoryList(visits);
+            })
+            .catch(error => {
+                console.error("역대 진료 기록 조회 오류:", error);
+            });
+    }
+
+    function formatTime(timeStr) {
+        if (!timeStr) return "";
+        // 예시: "13:05:00" -> "오후 1시 05분"
+        const parts = timeStr.split(":");
+        let hour = parseInt(parts[0], 10);
+        const minute = parts[1]; // 초는 무시
+        const period = hour < 12 ? "오전" : "오후";
+        hour = hour % 12;
+        if (hour === 0) hour = 12;
+        return `${period} ${hour}:${minute}`;
+    }
+
+    function renderVisitHistoryList(visits) {
+        const listElem = document.getElementById("visitHistoryList");
+        listElem.innerHTML = "";
+        visits.forEach(visit => {
+            const li = document.createElement("li");
+            // visit.visitDate 는 날짜, visit.visitTime 는 "HH:mm:ss" 형식의 문자열라고 가정
+            li.textContent = visit.visitDate + "\n" + formatTime(visit.visitTime);
+            li.style.whiteSpace = "pre-line"; // 개행문자 \n을 인식하도록 설정
+            li.style.cursor = "pointer";
+            li.addEventListener("click", function() {
+                showVisitDetail(visit);
+            });
+            listElem.appendChild(li);
+        });
+        // 역대 진료 기록이 없을 경우
+        if (visits.length > 0) {
+            showVisitDetail(visits[0]);
+        } else {
+            document.getElementById("historyVisitDate").textContent = "-";
+            document.getElementById("historyVisitTime").textContent = "";
+            document.getElementById("historyMemoSection").textContent = "";
+            document.getElementById("historyNotesSection").textContent = "";
+            document.getElementById("historyPrescriptionTbody").innerHTML =
+                "<tr><td colspan='5' style='text-align:center; color:#999;'>진료 기록이 없습니다.</td></tr>";
+        }
+    }
+
+    function showVisitDetail(visit) {
+        document.getElementById("historyVisitDate").textContent = visit.visitDate || "-";
+        document.getElementById("historyVisitTime").textContent = visit.visitTime || "";
+        document.getElementById("historyMemoSection").textContent = visit.visitReason || "";
+        document.getElementById("historyNotesSection").textContent = visit.clinicalNotes || "";
+        let notesSection = document.getElementById("historyNotesSection");
+        notesSection.innerHTML = visit.clinicalNotes || "";
+        const tbody = document.getElementById("historyPrescriptionTbody");
+        tbody.innerHTML = "";
+        if (visit.prescriptions && visit.prescriptions.length > 0) {
+            visit.prescriptions.forEach(p => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td>${p.drugCode || ""}</td>
+                    <td>${p.drugName || ""}</td>
+                    <td>${p.dosage || ""}</td>
+                    <td>${p.days != null ? p.days : ""}</td>
+                    <td>${p.insuranceYn ? "급여" : "비급여"}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        } else {
+            tbody.innerHTML = "<tr><td colspan='5' style='text-align:center; color:#999;'>처방 내역 없음</td></tr>";
+        }
+    }
+
+    // 현재 진료중인 환자의 정보가 로드되면 역대 기록도 불러옴
+    // 예: loadCurrentConsultationPatient() 에서 currentPatientId를 받아온 후 호출
+    // (currentPatientId는 /medicalvisit/currentPatient 엔드포인트에서 반환한 값)
+    if (currentPatientId) {
+        loadVisitHistory(currentPatientId);
+    }
+
+    // 기본 텍스트 포맷팅 함수 (재정의)
+    function formatText(command) {
+        document.execCommand(command, false, null);
+    }
+    function changeFontSize(size) {
+        document.execCommand("fontSize", false, "7");
+        var editor = document.getElementById("recordEditor");
+        var fontElements = editor.getElementsByTagName("font");
+        for (var i = 0; i < fontElements.length; i++) {
+            if (fontElements[i].getAttribute("size") === "7") {
+                fontElements[i].removeAttribute("size");
+                fontElements[i].style.fontSize = size + "px";
+            }
+        }
+    }
+</script>
+<script>
+    let drugData = [];
+
+    function loadDrugData() {
+        Papa.parse("/valid_ENT_codes.csv", {
+            download: true,
+            header: true, // CSV 파일에 헤더가 있으므로 true
+            complete: function(results) {
+                drugData = results.data; // CSV의 각 행은 객체로 저장됩니다.
+                console.log("Drug Data loaded:", drugData);
+            },
+            error: function(err) {
+                console.error("CSV 파싱 오류:", err);
+            }
+        });
+    }
+
+    window.addEventListener("DOMContentLoaded", loadDrugData);
+
+    function setupAutocomplete(inputElement) {
+        const suggestionBox = document.createElement('div');
+        suggestionBox.classList.add('autocomplete-suggestions');
+        suggestionBox.style.cssText = "position:absolute; border:1px solid #ccc; background:#fff; max-height:150px; overflow-y:auto; z-index: 1000; display:none;";
+        // 입력란 바로 아래에 컨테이너 추가 (부모 요소에 position: relative; 가 있어야 올바르게 위치합니다.)
+        inputElement.parentNode.style.position = "relative";
+        inputElement.parentNode.insertBefore(suggestionBox, inputElement.nextSibling);
+
+        // 입력창 이벤트 처리
+        inputElement.addEventListener("keyup", function() {
+            const query = inputElement.value.trim();
+            // 최소 2글자 이상 입력
+            if (query.length < 2) {
+                suggestionBox.style.display = "none";
+                return;
+            }
+            // drugData 배열이 로드되어 있지 않다면 리턴
+            if (!drugData || !drugData.length) return;
+
+            // CSV의 'kor' 필드를 기준으로 검색 (대소문자 구분 없이)
+            const matches = drugData.filter(item => {
+                return item.kor && item.kor.toLowerCase().includes(query.toLowerCase());
+            });
+
+            // 추천 목록 생성
+            suggestionBox.innerHTML = "";
+            if (matches.length === 0) {
+                suggestionBox.style.display = "none";
+                return;
+            }
+            matches.forEach(match => {
+                const div = document.createElement("div");
+                div.textContent = match.kor; // 표시할 텍스트는 한글 명칭
+                div.style.padding = "5px";
+                div.style.cursor = "pointer";
+                // 마우스 오버 시 배경색 변경
+                div.addEventListener("mouseover", () => {
+                    div.style.backgroundColor = "#f0f0f0";
+                });
+                div.addEventListener("mouseout", () => {
+                    div.style.backgroundColor = "#fff";
+                });
+                // 클릭 시, 입력란과 관련 코드 필드 자동 채우기
+                div.addEventListener("click", () => {
+                    inputElement.value = match.kor;
+                    // 해당 입력란의 컨테이너에서 코드 입력란 찾기 (클래스는 .prescription-code 사용)
+                    const containerRow = inputElement.closest("tr");
+                    if (containerRow) {
+                        const codeInput = containerRow.querySelector(".prescription-code");
+                        if (codeInput) {
+                            codeInput.value = match.code;
+                        }
+                    }
+                    suggestionBox.style.display = "none";
+                });
+                suggestionBox.appendChild(div);
+            });
+            suggestionBox.style.display = "block";
+        });
+
+        // 입력란 포커스 아웃 시 추천 목록 숨기기
+        inputElement.addEventListener("blur", function() {
+            // 약간의 딜레이 후에 숨기기: 클릭 이벤트가 먼저 처리되도록
+            setTimeout(() => {
+                suggestionBox.style.display = "none";
+            }, 150);
+        });
+    }
 </script>
 </body>
 </html>

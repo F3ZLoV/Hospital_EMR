@@ -507,3 +507,88 @@ body {
     margin-top: 2px;
     color: green;
 }
+.history-container { display: flex; gap: 10px; margin-top: 20px; }
+.visit-history-list { width: 150px; border: 1px solid #ccc; overflow-y: auto; }
+.visit-history-list ul { list-style: none; padding: 0; margin: 0; }
+.visit-history-list li { cursor: pointer; padding: 8px; border-bottom: 1px solid #eee; padding: 6px 10px;
+    transition: background-color 0.2s;}
+.visit-history-list li:hover {
+    background-color: #f0f0f0; /* 마우스 올렸을 때 배경색 */
+    cursor: pointer;
+}
+.visit-history-detail { flex: 1; border: 1px solid #ccc; padding: 10px; }
+.record-html {
+    border: 1px solid #ddd;
+    min-height: 100px;
+    padding: 8px;
+    margin-top: 4px;
+    background-color: #fafafa;
+}
+#historyPrescriptionTable { width: 100%; border-collapse: collapse; }
+#historyPrescriptionTable th, #historyPrescriptionTable td { border: 1px solid #ccc; padding: 4px; text-align: center; }
+
+.prescription-section table input {
+    padding: 5px;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+}
+
+.prescription-section table th,
+.prescription-section table td {
+    border: 1px solid #ddd;
+    text-align: center;
+    padding: 8px;
+}
+
+#addPrescriptionRowBtn {
+    background-color: rgba(255, 243, 180, 0.69);
+    color: #000;
+    border: none;
+    cursor: pointer;
+}
+
+#addPrescriptionRowBtn:hover {
+    background-color: #45a049;
+}
+table.month-view {
+    width: 100%;
+    border-collapse: collapse;
+}
+table.month-view th, table.month-view td {
+    border: 1px solid #ddd;
+    padding: 4px;
+    text-align: center;
+    vertical-align: top;
+    position: relative;
+}
+.day-btn {
+    background: none;
+    border: none;
+    font-size: 1rem;
+    cursor: pointer;
+}
+.today button.day-btn {
+    background-color: #ffd700;
+    border-radius: 4px;
+}
+/* 요일에 따른 폰트 색상 */
+td:nth-child(1) button.day-btn { color: red; }   /* 일요일 */
+td:nth-child(7) button.day-btn { color: blue; }   /* 토요일 */
+/* 일정이 있는 날짜: 아래쪽에 초록 글씨로 제목 표시 */
+.day-event-title {
+    font-size: 0.7rem;
+    color: green;
+    margin-top: 2px;
+}
+/* 월간 일정 리스트 스타일 */
+.monthly-event-item {
+    padding: 4px 8px;
+    border-bottom: 1px solid #ccc;
+    cursor: pointer;
+}
+.monthly-event-item:hover {
+    background-color: #f1f1f1;
+}
+.prescription-name-container { position: relative; }
+
+
