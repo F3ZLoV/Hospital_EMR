@@ -21,9 +21,9 @@ public class CalendarEvent {
     private String description;
 
     @Column(nullable = false)
-    private String role;  // "doctor" 또는 "nurse"
+    private String role;  // 예: "doctor", "nurse"
 
-    // getters and setters
+    // Getters and setters
     public Integer getEventId() {
         return eventId;
     }
