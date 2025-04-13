@@ -48,22 +48,43 @@ public class AppointmentController {
     // 예약 목록 조회 (예약 리스트 모달에 표시할 fragment 반환)
     @GetMapping("/list")
     public String getAppointmentList(Model model) {
-        List<Map<String, Object>> appointmentList = appointmentRepository.findAll().stream().map(appointment -> {
-            Map<String, Object> map = new HashMap<>();
-            map.put("appointmentId", appointment.getAppointment_id());
-            map.put("patientId", appointment.getPatient_id());
-            Patient patient = patientRepository.findById(Long.valueOf(appointment.getPatient_id())).orElse(null);
-            if (patient != null) {
-                map.put("patientName", patient.getName());
-            } else {
-                map.put("patientName", "Unknown");
-            }
-            map.put("appointmentDate", appointment.getAppointment_date());
-            map.put("appointmentTime", appointment.getAppointment_time());
-            map.put("status", appointment.getStatus());
-            map.put("remarks", appointment.getRemarks());
-            return map;
-        }).collect(Collectors.toList());
+        LocalDate currentDate = LocalDate.now();
+        LocalTime currentTime = LocalTime.now();
+
+        List<Map<String, Object>> appointmentList = appointmentRepository.findAll().stream()
+                .filter(appointment -> {
+                    LocalDate apptDate = appointment.getAppointment_date();
+                    LocalTime apptTime = appointment.getAppointment_time();
+                    if (apptDate.isBefore(currentDate)) {
+                        return false;
+                    }
+                    if (apptDate.equals(currentDate) && apptTime.isBefore(currentTime)) {
+                        return false;
+                    }
+                    return true;
+                })
+                // 예약 날짜와 시간이 빠른 순서로 정렬 (즉, 현재와 제일 가까운 예약이 위쪽에 오도록)
+                .sorted((a1, a2) -> {
+                    int cmp = a1.getAppointment_date().compareTo(a2.getAppointment_date());
+                    if (cmp == 0) {
+                        cmp = a1.getAppointment_time().compareTo(a2.getAppointment_time());
+                    }
+                    return cmp;
+                })
+                .map(appointment -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("appointmentId", appointment.getAppointment_id());
+                    map.put("patientId", appointment.getPatient_id());
+                    Patient patient = patientRepository.findById(Long.valueOf(appointment.getPatient_id())).orElse(null);
+                    map.put("patientName", patient != null ? patient.getName() : "Unknown");
+                    map.put("appointmentDate", appointment.getAppointment_date());
+                    map.put("appointmentTime", appointment.getAppointment_time());
+                    map.put("status", appointment.getStatus());  // 예: "예약", "완료", "취소"
+                    map.put("remarks", appointment.getRemarks());
+                    return map;
+                })
+                .collect(Collectors.toList());
+
         model.addAttribute("appointments", appointmentList);
         return "appointment_list :: listFragment";
     }

@@ -1080,29 +1080,86 @@
 
 </script>
 <script>
-    document.addEventListener("click", function (event) {
-        if (event.target.classList.contains("update-status-btn")) {
-            const id = event.target.getAttribute("data-id");
-            const selectedStatus = document.querySelector(`input[name="status_${id}"]:checked`).value;
-
-            fetch(`/appointment/updateStatus?appointmentId=${id}&status=${encodeURIComponent(selectedStatus)}`, {
-                method: "POST"
-            })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        alert("상태가 업데이트되었습니다.");
-                        document.getElementById("openAppointmentListModalBtn").click(); // 다시 로딩
-                    } else {
-                        alert("업데이트 실패: " + data.message);
-                    }
+    // 예약 목록에 있는 "접수" 및 "취소" 버튼 클릭 이벤트 처리
+    document.addEventListener("click", function(e) {
+        // "접수" 버튼 클릭 시
+        if (e.target && e.target.classList.contains("reception-btn")) {
+            var appointmentId = e.target.getAttribute("data-id");
+            var patientId = e.target.getAttribute("data-patient-id");
+            if (!appointmentId || !patientId) return;
+            if (confirm("이 예약을 접수 처리하시겠습니까? (상태가 '완료'로 업데이트되고 환자 대기 리스트로 등록됩니다)")) {
+                // 첫 번째: 예약 상태를 '완료'로 업데이트
+                fetch(`/appointment/updateStatus?appointmentId=${appointmentId}&status=완료`, {
+                    method: "POST"
                 })
-                .catch(err => {
-                    console.error("에러 발생:", err);
-                    alert("통신 오류");
-                });
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // 두 번째: patient 테이블의 waiting 값을 true로 업데이트 (/patient/register 엔드포인트 활용)
+                            return fetch(`/patient/register?patientId=${patientId}`, {
+                                method: "POST",
+                                headers: { "Content-Type": "application/x-www-form-urlencoded" }
+                            });
+                        } else {
+                            throw new Error(data.message);
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(function(data2) {
+                        alert("접수 처리 완료: " + data2.message);
+                        // 예약 목록 및 대기 환자 리스트 갱신
+                        refreshAppointmentList();
+                        refreshWaitingList();  // 이 함수는 대기 환자 리스트를 새로고침하는 함수를 구현해야 합니다.
+                    })
+                    .catch(function(error) {
+                        console.error("접수 처리 오류:", error);
+                        alert("예약 접수 및 대기 등록 처리 중 오류가 발생하였습니다.");
+                    });
+            }
+        }
+        // "취소" 버튼 클릭 시
+        else if (e.target && e.target.classList.contains("cancel-btn")) {
+            var appointmentId = e.target.getAttribute("data-id");
+            if (confirm("이 예약을 취소하시겠습니까?")) {
+                fetch(`/appointment/updateStatus?appointmentId=${appointmentId}&status=취소`, {
+                    method: "POST"
+                })
+                    .then(response => response.json())
+                    .then(function(data) {
+                        alert(data.message);
+                        refreshAppointmentList();
+                    })
+                    .catch(function(error) {
+                        console.error("취소 처리 오류:", error);
+                        alert("예약 취소 처리 중 오류가 발생하였습니다.");
+                    });
+            }
         }
     });
+
+    // 예약 목록을 새로고침하는 함수 (AJAX로 예약 목록 fragment 재로딩)
+    function refreshAppointmentList() {
+        fetch('/appointment/list')
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById("appointmentListContainer").innerHTML = html;
+            })
+            .catch(function(error) {
+                console.error("예약 목록 갱신 오류:", error);
+            });
+    }
+
+    // 예시: 대기 환자 리스트를 새로고침하는 함수 (별도로 구현)
+    function refreshWaitingList() {
+        fetch('/patient/doctor/waiting')
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById("doctorPatientList").innerHTML = html;
+            })
+            .catch(function(error) {
+                console.error("대기 리스트 갱신 오류:", error);
+            });
+    }
 
 </script>
 </body>
