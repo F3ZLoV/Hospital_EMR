@@ -244,7 +244,6 @@ body {
 #patientList li:hover {
     background-color: #f9f9f9;
 }
-
 /* 캘린더 배너 전체 영역 */
 .calendar-banner {
     display: flex;
@@ -282,6 +281,30 @@ body {
 .today-date {
     font-size: 0.9rem;
     margin-left: 20px;
+}
+
+.day-btn {
+    width: 100%;
+    height: 100%;
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: center;
+    /* 텍스트 중앙 정렬 */
+}
+.day-btn:hover {
+    background-color: #eee;
+    /* 마우스 올리면 회색 */
+}
+.month-view th, .month-view td {
+    padding: 8px;
+    min-width: 30px;
+}
+.right-banner {
+    width: 350px;
+    padding: 10px;
+    border-left: 2px solid #ccc;
+    background-color: #F9F9F9;
 }
 
 .day-btn {

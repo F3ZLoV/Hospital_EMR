@@ -53,71 +53,129 @@
 
     <!-- 메인 콘텐츠 영역 -->
     <div class="main-content">
-        <div class="consultation-container">
-            <!-- 좌측: 환자 정보 및 메모 카드 -->
-            <div class="patient-card">
-                <h3>환자 정보</h3>
-                <p><strong>이름:</strong> <span id="patientName">--</span></p>
-                <p><strong>나이:</strong> <span id="patientAge">--</span></p>
-                <p><strong>성별:</strong> <span id="patientGender">--</span></p>
-                <p><strong>전화번호:</strong> <span id="patientPhone">--</span></p>
-                <h4>진료 메모</h4>
-                <textarea id="consultationMemo" placeholder="환자 관련 메모를 작성하세요."></textarea>
-                <!-- Save 메모 버튼 (개별 업데이트를 원한다면) -->
-            </div>
-            <!-- 우측: 진료 기록 작성 카드 -->
-            <!-- 진료 기록 작성 카드 내부 -->
-            <div class="record-card">
-                <div class="toolbar">
-                    <button type="button" onclick="formatText('bold')"><strong>B</strong></button>
-                    <button type="button" onclick="formatText('italic')"><em>I</em></button>
-                    <button type="button" onclick="formatText('underline')"><u>U</u></button>
-                    <select id="fontSizeSelect" onchange="changeFontSize(this.value)">
-                        <option value="10">10px</option>
-                        <option value="12">12px</option>
-                        <option value="14">14px</option>
-                        <option value="16">16px</option>
-                        <option value="18">18px</option>
-                        <option value="20">20px</option>
-                        <option value="22">22px</option>
-                        <option value="24">24px</option>
-                        <option value="26">26px</option>
-                        <option value="28">28px</option>
-                    </select>
+        <div class="row half-row first-content">
+            <div class="column left-column">
+                <div class="patient-card">
+                    <div class="patient-info">
+                        <h3>환자 정보</h3>
+                        <p><strong>이름:</strong> <span id="patientName">--</span></p>
+                        <p><strong>나이:</strong> <span id="patientAge">--</span></p>
+                        <p><strong>성별:</strong> <span id="patientGender">--</span></p>
+                        <p><strong>전화번호:</strong> <span id="patientPhone">--</span></p>
+                        <p><strong>접수 메모:</strong> <span id="receptionMemo">--</span></p>
+                    </div>
+                    <div class="patient-memo">
+                        <h4>진료 메모</h4>
+                        <textarea id="consultationMemo" placeholder="환자 관련 메모를 작성하세요."></textarea>
+                    </div>
                 </div>
-                <div id="recordEditor" class="editor" contenteditable="true" placeholder="진료 기록을 작성하세요."></div>
+            </div>
+            <div class="column right-column">
+                <div class="record-card">
+                    <div class="toolbar">
+                        <button type="button" onclick="formatText('bold')"><strong>B</strong></button>
+                        <button type="button" onclick="formatText('italic')"><em>I</em></button>
+                        <button type="button" onclick="formatText('underline')"><u>U</u></button>
+                        <select id="fontSizeSelect" onchange="changeFontSize(this.value)">
+                            <option value="10">10px</option>
+                            <option value="12">12px</option>
+                            <option value="14">14px</option>
+                            <option value="16">16px</option>
+                            <option value="18">18px</option>
+                            <option value="20">20px</option>
+                            <option value="22">22px</option>
+                            <option value="24">24px</option>
+                            <option value="26">26px</option>
+                            <option value="28">28px</option>
+                        </select>
+                    </div>
+                    <div id="recordEditor" class="editor" contenteditable="true" placeholder="진료 기록을 작성하세요."></div>
+                </div>
+            </div>
+        </div>
 
-                <!-- 처방 입력 섹션 -->
-                <div class="prescription-section">
-                    <h4>처방</h4>
-                    <table id="prescriptionTable" style="width:100%; border-collapse: collapse;">
+        <div class="row half-row middle-content">
+            <div class="column left-column">
+                <!-- 진단 목록 섹션 -->
+                <div class="diagnosis-form-container">
+                    <h4>진단 리스트</h4>
+                    <table id="diagnosisTable">
                         <thead>
                         <tr>
-                            <th style="width:15%;">코드</th>
-                            <th style="width:30%;">명칭</th>
-                            <th style="width:15%;">용량</th>
-                            <th style="width:15%;">일수</th>
-                            <th style="width:15%;">급여</th>
-                            <th style="width:10%;">처방 시간</th>
-                            <th style="width:10%;">삭제</th>
+                            <th style="width:15%;">진단 코드</th>
+                            <th style="width:50%;">진단 명</th>
+                            <th style="width:20%;">진료과</th>
+                            <th style="width:5%;">X</th>
                         </tr>
                         </thead>
                         <tbody>
-                        <!-- 여기에 처방 입력 행들이 추가됩니다. -->
+                        <!-- 진단 행이 동적으로 추가됨 -->
                         </tbody>
                         <tfoot>
                         <tr>
-                            <td colspan="7">
-                                <button type="button" id="addPrescriptionRowBtn" style="width:100%; padding:10px; font-size:1.1rem;">+ 추가</button>
+                            <td colspan="4">
+                                <button type="button" id="addDiagnosisRowBtn">+ 추가</button>
                             </td>
                         </tr>
                         </tfoot>
                     </table>
                 </div>
-                <!-- 진료 완료 버튼 (기존 저장 버튼 대신) -->
-                <button id="completeVisitBtn" style="margin-top:10px; padding:8px 12px;">진료 완료</button>
+                <!-- 처방 섹션 -->
+                <div class="prescription-section">
+                    <h4>처방</h4>
+                    <table id="prescriptionTable">
+                        <thead>
+                        <tr>
+                            <th style="width:15%;">코드</th>
+                            <th style="width:25%;">명칭</th>
+                            <th style="width:10%;">용량</th>
+                            <th style="width:10%;">일수</th>
+                            <th style="width:15%;">급여</th>
+                            <th style="width:20%;">시간</th>
+                            <th style="width:10%;">X</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <!-- 동적으로 처방 행 추가 -->
+                        </tbody>
+                        <tfoot>
+                        <tr>
+                            <td colspan="7">
+                                <button type="button" id="addPrescriptionRowBtn">+ 추가</button>
+                            </td>
+                        </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+            <div class="column right-column">
+                <div class="row full-row">
+                    <div class="treatmentplan-form-container">
+                        <h3>치료 계획 입력</h3>
+                        <div class="treatmentplan-grid">
+                            <label for="treatmentDescription">치료 내용</label>
+                            <textarea id="treatmentDescription" rows="2" placeholder="치료 내용..."></textarea>
+
+                            <label for="startDate">시작 일자</label>
+                            <input type="date" id="startDate" />
+
+                            <label for="endDate">종료 일자</label>
+                            <input type="date" id="endDate" />
+
+                            <label>상태</label>
+                            <div id="treatmentStatusRadios">
+                                <label><input class="treatmentStatus" type="radio" name="treatmentStatus" value="예정" checked> 예정</label>
+                                <label><input class="treatmentStatus" type="radio" name="treatmentStatus" value="진행중"> 진행중</label>
+                                <label><input class="treatmentStatus" type="radio" name="treatmentStatus" value="완료"> 완료</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
+
+        <!-- 진료 완료 버튼 -->
+        <button type="button" id="completeVisitBtn" style="padding:8px 12px;">진료 완료</button>
 
         <!-- 역대 진료 기록 섹션 -->
         <div class="history-container" style="display: flex; gap: 10px;">
@@ -154,7 +212,6 @@
                 </div>
             </div>
         </div>
-
     </div>
 
     <!-- 우측 배너: 캘린더 영역 (일정관리 모달 포함) -->
@@ -637,32 +694,73 @@
     });
 </script>
 <script>
-    document.getElementById("patientList").addEventListener("click", function(e) {
-        if (e.target && e.target.classList.contains("call-btn")) {
-            const patientId = e.target.getAttribute("data-id");
-            localStorage.setItem("callPatient", JSON.stringify({ patientId: patientId }));
-        }
-        // 진료중 버튼 처리
-        if (e.target && e.target.classList.contains("in-consultation-btn")) {
-            const patientId = e.target.getAttribute("data-id");
-            if (confirm("진료 완료 처리 하시겠습니까?")) {
-                fetch('/patient/call/complete', {
-                    method: "POST",
-                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                    body: "patientId=" + encodeURIComponent(patientId)
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        alert(data.message);
-                        refreshWaitingList();
-                    })
-                    .catch(error => {
-                        console.error("진료 완료 처리 실패:", error);
-                        alert("진료 완료 처리에 실패하였습니다.");
-                    });
-            }
+    // 페이지 로드 시, 진단 리스트에 최초 행 추가
+    document.addEventListener("DOMContentLoaded", function() {
+        // 만약 진단 테이블의 tbody 내에 행이 없으면 새 행 추가
+        if (!document.querySelector("#diagnosisTable tbody tr")) {
+            addDiagnosisRow();
         }
     });
+    // 진단 행을 추가하는 함수
+    function addDiagnosisRow() {
+        const tbody = document.querySelector("#diagnosisTable tbody");
+        const newRow = document.createElement("tr");
+        newRow.innerHTML = `
+          <td><input type="text" class="diag-code" placeholder="예: J18" /></td>
+          <td><input type="text" class="diag-name" placeholder="진단 명 입력" /></td>
+          <td><input type="text" class="diag-dept" value="이비인후과" readonly /></td>
+          <td><button type="button" class="deleteDiagnosisRowBtn">X</button></td>
+      `;
+        tbody.appendChild(newRow);
+        // 삭제 버튼 클릭 시 해당 행 삭제 이벤트 추가
+        const deleteBtn = newRow.querySelector(".deleteDiagnosisRowBtn");
+        deleteBtn.addEventListener("click", function() {
+            newRow.parentNode.removeChild(newRow);
+        });
+        // 진단 명 입력란에 키다운 이벤트 추가하여 탭(Tab) 또는 엔터(Enter) 시 새 행 추가
+        const diagNameInput = newRow.querySelector(".diag-name");
+        diagNameInput.addEventListener("keydown", function(e) {
+            if (e.key === "Tab" || e.key === "Enter") {
+                e.preventDefault(); // 기본 탭 이동 또는 폼 제출 방지
+                addDiagnosisRow();  // 새 행 추가
+                // 새로 추가된 행의 진단 코드 입력란으로 포커스 이동
+                const rows = document.querySelectorAll("#diagnosisTable tbody tr");
+                if (rows.length > 0) {
+                    rows[rows.length - 1].querySelector(".diag-code").focus();
+                }
+            }
+        });
+    }
+    // "진단 행 추가" 버튼 이벤트 리스너 설정
+    document.addEventListener("DOMContentLoaded", function() {
+        const addDiagnosisRowBtn = document.getElementById("addDiagnosisRowBtn");
+        addDiagnosisRowBtn.addEventListener("click", addDiagnosisRow);
+
+        function addDiagnosisRow() {
+            const tbody = document.querySelector("#diagnosisTable tbody");
+            const newRow = document.createElement("tr");
+            newRow.innerHTML = `
+            <td><input type="text" class="diag-code" placeholder="예: J18" /></td>
+            <td><input type="text" class="diag-name" placeholder="진단 명 입력" /></td>
+            <td><input type="text" class="diag-dept" value="이비인후과" readonly /></td>
+            <td><button type="button" class="deleteDiagnosisRowBtn">X</button></td>
+        `;
+            tbody.appendChild(newRow);
+
+            // 삭제 버튼 이벤트
+            const deleteBtn = newRow.querySelector(".deleteDiagnosisRowBtn");
+            deleteBtn.addEventListener("click", function() {
+                newRow.parentNode.removeChild(newRow);
+            });
+        }
+    });
+
+    // DOMContentLoaded 시 시작 일자 자동설정
+    document.addEventListener("DOMContentLoaded", function() {
+        document.getElementById("startDate").value = new Date().toISOString().split("T")[0];
+    });
+</script>
+<script>
 
     // 기본 텍스트 포맷팅 함수 (execCommand 사용)
     function formatText(command) {
@@ -687,6 +785,21 @@
 <script>
     var currentPatientId = null;
 
+    function loadReceptionMemo(patientId) {
+        fetch('/patient/receptionMemo?patientId=' + encodeURIComponent(patientId))
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById("receptionMemo").textContent = data.memo;
+                } else {
+                    document.getElementById("receptionMemo").textContent = "없음";
+                }
+            })
+            .catch(error => {
+                console.error("접수 메모 불러오기 오류:", error);
+            });
+    }
+
     // 현재 진료중인 환자 정보를 서버에서 가져와 UI에 뿌림
     function loadCurrentConsultationPatient() {
         fetch('/medicalvisit/currentPatient')
@@ -694,62 +807,27 @@
             .then(data => {
                 if (data.success) {
                     currentVisitId = data.visitId;
-                    currentPatientId = data.patientId; // 엔드포인트에서 patientId를 함께 반환해야 함
+                    currentPatientId = data.patientId;
+                    console.log(currentVisitId, currentPatientId);
                     // 환자 정보 UI 업데이트
                     document.getElementById("patientName").textContent = data.patientName;
                     document.getElementById("patientAge").textContent = data.patientAge;
                     document.getElementById("patientGender").textContent = data.patientGender;
                     document.getElementById("patientPhone").textContent = data.patientPhone;
                     // currentPatientId가 존재하면 역대 진료 기록도 불러옴
+                    loadReceptionMemo(currentPatientId);
                     loadVisitHistory(currentPatientId);
                 } else {
                     // 현재 진료중인 환자가 없을 경우 안내 문구 표시
-                    const consultationContainer = document.querySelector(".consultation-container");
+                    const consultationContainer = document.querySelector(".main-content");
                     consultationContainer.innerHTML = '<p style="color: gray; text-align: center; font-style: italic; font-size: 1.2rem;">환자를 호출해 주세요.</p>';
                 }
             })
             .catch(error => console.error("현재 환자 조회 오류:", error));
     }
 
-    // 페이지 로드시 호출
-    loadCurrentConsultationPatient();
-
-    // Save 버튼 클릭 시, 환자 상담 메모와 진료 기록을 업데이트
-    document.getElementById("saveNotesBtn").addEventListener("click", function() {
-        var memo = document.getElementById("consultationMemo").value;
-        var record = document.getElementById("recordEditor").innerHTML;
-
-        if (!currentPatientId) {
-            alert("현재 진료중인 환자가 없습니다.");
-            return;
-        }
-
-        // 두 업데이트를 동시에 처리
-        Promise.all([
-            fetch('/medicalvisit/updatePatientMemo', {
-                method: "POST",
-                headers: {"Content-Type": "application/x-www-form-urlencoded"},
-                body: "patientId=" + encodeURIComponent(currentPatientId) +
-                    "&memo=" + encodeURIComponent(memo)
-            }).then(response => response.json()),
-            fetch('/medicalvisit/updateClinicalNotes', {
-                method: "POST",
-                headers: {"Content-Type": "application/x-www-form-urlencoded"},
-                body: "patientId=" + encodeURIComponent(currentPatientId) +
-                    "&record=" + encodeURIComponent(record)
-            }).then(response => response.json())
-        ])
-            .then(results => {
-                if (results.every(r => r.success)) {
-                    alert("진료 메모와 기록이 업데이트되었습니다.");
-                } else {
-                    alert("업데이트 중 일부 오류가 발생했습니다.");
-                }
-            })
-            .catch(error => {
-                console.error("업데이트 오류:", error);
-                alert("업데이트 중 오류가 발생했습니다.");
-            });
+    document.addEventListener("DOMContentLoaded", function() {
+        loadCurrentConsultationPatient();
     });
 
     // 기본 텍스트 포맷팅 함수
@@ -793,10 +871,13 @@
         })
         .catch(error => console.error("현재 진료중인 환자 정보 조회 오류:", error));
 
-    // 처방 행 추가
-    document.getElementById("addPrescriptionRowBtn").addEventListener("click", function() {
-        const tbody = document.getElementById("prescriptionTable").getElementsByTagName("tbody")[0];
+
+
+    let prescriptionRowIndex = 0;
+    function addPrescriptionRow() {
+        const tbody = document.getElementById("prescriptionTable").querySelector("tbody");
         const newRow = document.createElement("tr");
+        newRow.setAttribute("data-row-index", prescriptionRowIndex);
         newRow.innerHTML = `
         <td><input type="text" class="prescription-code" style="width:95%;"/></td>
         <td>
@@ -813,79 +894,46 @@
         </td>
         <td><input type="number" class="prescription-duration" style="width:95%;" placeholder="일수"/></td>
         <td>
-            <select class="prescription-insurance" style="width:95%;">
-                <option value="true">급여</option>
-                <option value="false">비급여</option>
-            </select>
-        </td>
-        <td>
-            <select class="prescription-timing" style="width:95%;">
-                <option value="식전 30분">식전 30분</option>
-                <option value="식후 30분">식후 30분</option>
-            </select>
-        </td>
-        <td><button type="button" class="deletePrescriptionRowBtn" style="width:100%;">삭제</button></td>
+        <div class="insurance-radio-group">
+            <label>
+                <input type="radio" name="prescription-insurance-${prescriptionRowIndex}" value="true" checked />
+                급여
+            </label>
+            <label>
+                <input type="radio" name="prescription-insurance-${prescriptionRowIndex}" value="false" />
+                비급여
+            </label>
+        </div>
+    </td>
+         <td>
+        <div class="timing-radio-group">
+            <label>
+                <input type="radio" name="prescription-timing-${prescriptionRowIndex}" value="식전 30분" checked />
+                식전 30분
+            </label>
+            <label>
+                <input type="radio" name="prescription-timing-${prescriptionRowIndex}" value="식후 30분" />
+                식후 30분
+            </label>
+        </div>
+    </td>
+        <td><button type="button" class="deletePrescriptionRowBtn" style="width:100%;">X</button></td>
     `;
         tbody.appendChild(newRow);
+
         const newInput = newRow.querySelector(".prescription-name");
         if (newInput) {
             setupAutocomplete(newInput);
         }
-    });
 
-    function addPrescriptionRow() {
-        const tbody = document.getElementById("prescriptionTable").querySelector("tbody");
-        const newRow = document.createElement("tr");
-        newRow.innerHTML = `
-        <td><input type="text" class="prescription-code" style="width:95%;"/></td>
-        <td>
-            <input type="text" class="prescription-name" style="width:95%;" placeholder="약물 명칭">
-            <div class="autocomplete-suggestions" style="display:none; border:1px solid #ccc; max-height:150px; overflow-y:auto; background:#fff;"></div>
-        </td>
-        <td>
-            <input type="number" class="prescription-dosage-value" style="width:50px;" placeholder="용량">
-            <select class="prescription-dosage-unit" style="width:40px;">
-                <option value="ml">ml</option>
-                <option value="mg">mg</option>
-                <option value="개">개</option>
-            </select>
-        </td>
-        <td><input type="number" class="prescription-duration" style="width:95%;" placeholder="일수"/></td>
-        <td>
-            <select class="prescription-insurance" style="width:95%;">
-                <option value="true">급여</option>
-                <option value="false">비급여</option>
-            </select>
-        </td>
-        <td>
-            <select class="prescription-timing" style="width:95%;">
-                <option value="식전 30분">식전 30분</option>
-                <option value="식후 30분">식후 30분</option>
-            </select>
-        </td>
-        <td><button type="button" class="deletePrescriptionRowBtn" style="width:100%;">삭제</button></td>
-    `;
-        tbody.appendChild(newRow);
-
-        // 마지막 셀의 처방 시간(select.prescription-timing)에 Tab 또는 Enter 이벤트
-        const timingSelect = newRow.querySelector(".prescription-timing");
-        timingSelect.addEventListener("keydown", function(e) {
-            if (e.key === "Tab" || e.key === "Enter") {
-                e.preventDefault();
-                addPrescriptionRow();
-                setTimeout(() => {
-                    // 새로 추가된 행의 첫 번째 입력란 (코드)로 포커스 이동
-                    const rows = document.querySelectorAll("#prescriptionTable tbody tr");
-                    if (rows.length > 0) {
-                        rows[rows.length - 1].querySelector(".prescription-code").focus();
-                    }
-                }, 100);
-            }
+        // 삭제 버튼 이벤트 설정
+        newRow.querySelector(".deletePrescriptionRowBtn").addEventListener("click", function() {
+            newRow.parentNode.removeChild(newRow);
         });
+
+        prescriptionRowIndex++;
     }
-
     document.getElementById("addPrescriptionRowBtn").addEventListener("click", addPrescriptionRow);
-
     if (!document.querySelector("#prescriptionTable tbody tr")) {
         addPrescriptionRow();
     }
@@ -897,138 +945,6 @@
             row.parentNode.removeChild(row);
         }
     });
-
-    // 진료 완료 버튼 클릭: 진료 기록(메모, 기록) 및 처방 저장 후 환자 complete 처리
-    document.getElementById("completeVisitBtn").addEventListener("click", function() {
-        var memo = document.getElementById("consultationMemo").value;
-        var record = document.getElementById("recordEditor").innerHTML;
-
-        if (!currentVisitId || !currentPatientId) {
-            alert("진료 기록 업데이트할 대상이 없습니다.");
-            return;
-        }
-
-        // 1. 진료 기록 업데이트 (/medicalvisit/updateNotes)
-        fetch('/medicalvisit/updateNotes', {
-            method: "POST",
-            headers: {"Content-Type": "application/x-www-form-urlencoded"},
-            body: "visitId=" + encodeURIComponent(currentVisitId) +
-                "&memo=" + encodeURIComponent(memo) +
-                "&record=" + encodeURIComponent(record)
-        })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // 2. 처방 데이터 수집 (수정된 부분)
-                    const prescriptionRows = document.querySelectorAll("#prescriptionTable tbody tr");
-                    const prescriptions = [];
-                    prescriptionRows.forEach(function(row) {
-                        const code = row.querySelector(".prescription-code").value.trim();
-                        const name = row.querySelector(".prescription-name").value.trim();
-                        const dosageValue = row.querySelector(".prescription-dosage-value").value.trim();
-                        const unitSelect = row.querySelector(".prescription-dosage-unit");
-                        const dosageUnit = unitSelect ? unitSelect.value : "";
-                        const dosage = dosageValue ? dosageValue + dosageUnit : "";
-                        const duration = row.querySelector(".prescription-duration").value.trim();
-                        const insuranceSelect = row.querySelector(".prescription-insurance");
-                        const insuranceValue = insuranceSelect ? (insuranceSelect.value === "true") : false;
-                        const timingValue = row.querySelector(".prescription-timing").value;
-                        // 최소 하나의 필드가 채워져 있으면 추가
-                        if (code || name || dosage || duration || timingValue) {
-                            prescriptions.push({
-                                visitId: currentVisitId,
-                                drugCode: code,
-                                drugName: name,
-                                dosage: dosage,
-                                days: duration ? parseInt(duration) : null,
-                                insuranceYn: insuranceValue,
-                                timing: timingValue
-                            });
-                        }
-                    });
-                    let prescriptionPromise = Promise.resolve({ success: true });
-                    if (prescriptions.length > 0) {
-                        // 3. 처방 저장 (/prescription/save)
-                        prescriptionPromise = fetch('/prescription/save', {
-                            method: "POST",
-                            headers: {"Content-Type": "application/json"},
-                            body: JSON.stringify(prescriptions)
-                        }).then(response => response.json());
-                    }
-                    return prescriptionPromise;
-                } else {
-                    throw new Error("진료 기록 업데이트 실패: " + data.message);
-                }
-            })
-            .then(presData => {
-                if (!presData.success && presData.message) {
-                    alert("진료 기록은 저장되었으나 처방 저장에 실패하였습니다: " + presData.message);
-                }
-                // 4. 환자 complete 처리: waiting, called 플래그를 false로 업데이트
-                return fetch('/patient/call/complete', {
-                    method: "POST",
-                    headers: {"Content-Type": "application/x-www-form-urlencoded"},
-                    body: "patientId=" + encodeURIComponent(currentPatientId)
-                });
-            })
-            .then(response => response.json())
-            .then(completeData => {
-                if (completeData.success) {
-                    alert("진료 기록, 처방 및 환자 완료 처리가 성공적으로 이루어졌습니다.");
-                    location.reload();
-                } else {
-                    alert("진료 완료 처리 실패: " + completeData.message);
-                }
-            })
-            .catch(error => {
-                console.error("진료 완료 처리 중 오류:", error);
-                alert("진료 완료 처리 중 오류가 발생하였습니다.");
-            });
-    });
-
-
-    // 기본 텍스트 포맷팅 함수 (execCommand 사용)
-    function formatText(command) {
-        document.execCommand(command, false, null);
-    }
-
-    // 폰트 크기 변경 함수
-    function changeFontSize(size) {
-        document.execCommand("fontSize", false, "7");
-        var editor = document.getElementById("recordEditor");
-        var fontElements = editor.getElementsByTagName("font");
-        for (var i = 0; i < fontElements.length; i++) {
-            if (fontElements[i].getAttribute("size") === "7") {
-                fontElements[i].removeAttribute("size");
-                fontElements[i].style.fontSize = size + "px";
-            }
-        }
-    }
-
-    // 페이지 로드시 현재 진료중인 환자의 정보와 최신 진료 기록 visitId, patientId 가져오기
-    function loadCurrentConsultationPatient() {
-        fetch('/medicalvisit/currentPatient')
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    currentVisitId = data.visitId;
-                    currentPatientId = data.patientId; // 엔드포인트에서 patientId를 함께 반환해야 함
-                    // 환자 정보 업데이트
-                    document.getElementById("patientName").textContent = data.patientName;
-                    document.getElementById("patientAge").textContent = data.patientAge;
-                    document.getElementById("patientGender").textContent = data.patientGender;
-                    document.getElementById("patientPhone").textContent = data.patientPhone;
-                } else {
-                    // 현재 진료중인 환자가 없을 경우, 상담 영역을 안내 문구로 대체
-                    const consultationContainer = document.querySelector(".consultation-container");
-                    consultationContainer.innerHTML = '<p style="color: gray; text-align: center; font-style: italic; font-size: 1.2rem;">환자를 호출해 주세요.</p>';
-                }
-            })
-            .catch(error => console.error("현재 진료중인 환자 정보 조회 오류:", error));
-    }
-
-    // 페이지 로드시 호출
-    loadCurrentConsultationPatient();
 
     // 역대 진료 기록 로딩: 현재 환자의 patientId로 호출
     function loadVisitHistory(patientId) {
@@ -1207,7 +1123,177 @@
     }
 </script>
 <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const completeBtn = document.getElementById("completeVisitBtn");
+        if (!completeBtn) {
+            console.warn("completeVisitBtn 버튼이 존재하지 않습니다.");
+            return;
+        }
 
+        completeBtn.addEventListener("click", async function () {
+            console.log("진료 완료 버튼 클릭됨");
+            alert("진료 완료 버튼이 클릭되었습니다."); // 클릭 확인용
+
+            // 진료 메모와 기록 값 가져오기
+            const memo = document.getElementById("consultationMemo").value;
+            const record = document.getElementById("recordEditor").innerHTML;
+            console.log("Memo:", memo);
+            console.log("Record:", record);
+
+            // currentVisitId와 currentPatientId는 다른 부분(예를 들어, 페이지 로드 시 /medicalvisit/currentPatient를 통해 설정됨)
+            if (!currentVisitId || !currentPatientId) {
+                alert("진료 기록 업데이트할 대상(환자 정보 또는 진료 기록)이 없습니다.");
+                return;
+            }
+            console.log("currentVisitId:", currentVisitId, "currentPatientId:", currentPatientId);
+
+            try {
+                // 1. 진료 기록 업데이트 요청 (/medicalvisit/updateNotes)
+                let updateNotesResponse = await fetch('/medicalvisit/updateNotes', {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: new URLSearchParams({
+                        visitId: currentVisitId,
+                        memo: memo,
+                        record: record
+                    })
+                });
+                let updateNotesResult = await updateNotesResponse.json();
+                if (!updateNotesResult.success) {
+                    throw new Error("진료 기록 업데이트 실패: " + updateNotesResult.message);
+                }
+                console.log("진료 기록 업데이트 성공");
+
+                // 2. 처방 정보 수집 및 저장 (/prescription/save)
+                const prescriptionRows = document.querySelectorAll("#prescriptionTable tbody tr");
+                let prescriptions = [];
+                prescriptionRows.forEach(function (row) {
+                    const rowIndex = row.getAttribute("data-row-index");
+                    const code = row.querySelector(".prescription-code").value.trim();
+                    const name = row.querySelector(".prescription-name").value.trim();
+                    const dosageValue = row.querySelector(".prescription-dosage-value").value.trim();
+                    const unit = row.querySelector(".prescription-dosage-unit").value;
+                    const dosage = dosageValue ? dosageValue + unit : "";
+                    const duration = row.querySelector(".prescription-duration").value.trim();
+                    const insuranceElem = row.querySelector(`input[name="prescription-insurance-${rowIndex}"]:checked`);
+                    const timingElem = row.querySelector(`input[name="prescription-timing-${rowIndex}"]:checked`);
+                    const insuranceYn = insuranceElem ? (insuranceElem.value === "true") : false;
+                    const timing = timingElem ? timingElem.value : "";
+                    if (code || name || dosage || duration || timing) {
+                        prescriptions.push({
+                            visitId: currentVisitId,
+                            drugCode: code,
+                            drugName: name,
+                            dosage: dosage,
+                            days: duration ? parseInt(duration) : null,
+                            insuranceYn: insuranceYn,
+                            timing: timing
+                        });
+                    }
+                });
+                if (prescriptions.length > 0) {
+                    let prescriptionResponse = await fetch('/prescription/save', {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(prescriptions)
+                    });
+                    let prescriptionResult = await prescriptionResponse.json();
+                    if (!prescriptionResult.success) {
+                        alert("처방 저장 실패: " + prescriptionResult.message);
+                    }
+                    console.log("처방 저장 완료");
+                } else {
+                    console.log("저장할 처방 데이터 없음");
+                }
+
+                // 3. 진단 데이터 수집 및 저장 (/diagnosis/saveAll)
+                const diagnosisRows = document.querySelectorAll("#diagnosisTable tbody tr");
+                let diagnoses = [];
+                diagnosisRows.forEach(function (row) {
+                    const diagCode = row.querySelector(".diag-code").value.trim();
+                    const diagName = row.querySelector(".diag-name").value.trim();
+                    const dept = row.querySelector(".diag-dept").value.trim();
+                    if (diagCode || diagName) {
+                        diagnoses.push({
+                            visitId: currentVisitId,
+                            patientId: currentPatientId,
+                            diagnosisCode: diagCode,
+                            diagnosisName: diagName,
+                            department: dept
+                        });
+                    }
+                });
+                let diagId;
+                if (diagnoses.length > 0) {
+                    let diagnosisResponse = await fetch('/diagnosis/saveAll', {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(diagnoses)
+                    });
+                    let diagnosisResult = await diagnosisResponse.json();
+                    if (!diagnosisResult.success) {
+                        throw new Error("진단 기록 저장 실패: " + diagnosisResult.message);
+                    }
+                    // 저장된 진단 기록이 여러 건일 경우 첫 번째 진단 ID 사용
+                    if (diagnosisResult.diagnoses && diagnosisResult.diagnoses.length > 0) {
+                        diagId = diagnosisResult.diagnoses[0].diagnosisId;
+                    } else {
+                        diagId = diagnosisResult.diagnosisId;
+                    }
+                    if (!diagId) {
+                        throw new Error("진단 ID가 반환되지 않았습니다.");
+                    }
+                    console.log("진단 저장 완료, 선택된 진단 ID:", diagId);
+                } else {
+                    throw new Error("저장할 진단 데이터가 없습니다.");
+                }
+
+                // 4. 치료 계획 데이터 수집 및 저장 (/treatmentplan/save)
+                // radio 버튼에서 치료 상태를 선택할 때는 아래와 같이 querySelector 사용
+                let treatmentStatus = document.querySelector('input[name="treatmentStatus"]:checked').value;
+                let treatmentDescription = document.getElementById("treatmentDescription").value.trim();
+                let startDate = document.getElementById("startDate").value.trim();
+                let endDate = document.getElementById("endDate").value.trim();
+                let treatmentParams = new URLSearchParams({
+                    diagnosisId: diagId,
+                    treatmentDescription: treatmentDescription,
+                    startDate: startDate,
+                    endDate: endDate,
+                    status: treatmentStatus
+                });
+                let treatmentResponse = await fetch('/treatmentplan/save', {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: treatmentParams
+                });
+                let treatmentResult = await treatmentResponse.json();
+                if (!treatmentResult.success) {
+                    throw new Error("치료 계획 저장 실패: " + treatmentResult.message);
+                }
+                console.log("치료 계획 저장 완료");
+
+                // 5. 최종적으로 환자 상태 업데이트 (/patient/call/complete)
+                let completeResponse = await fetch('/patient/call/complete', {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: new URLSearchParams({ patientId: currentPatientId })
+                });
+                let completeResult = await completeResponse.json();
+                if (!completeResult.success) {
+                    throw new Error("진료 완료 처리 실패: " + completeResult.message);
+                }
+                console.log("환자 진료 완료 처리 완료");
+
+                alert("진료 기록, 처방, 진단 기록, 치료 계획 및 환자 완료 처리가 성공적으로 완료되었습니다.");
+                location.reload();
+
+            } catch (error) {
+                console.error("진료 완료 처리 중 오류:", error);
+                alert("진료 완료 처리 중 오류가 발생하였습니다: " + error.message);
+            }
+        });
+    });
 </script>
+
 </body>
 </html>

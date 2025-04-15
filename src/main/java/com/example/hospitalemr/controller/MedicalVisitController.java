@@ -98,33 +98,45 @@ public class MedicalVisitController {
             if (patients.isEmpty()) {
                 result.put("success", false);
                 result.put("message", "현재 진료중인 환자가 없습니다.");
-            } else {
-                Patient current = patients.get(0);
-                result.put("success", true);
-                // 진료 기록에 필요한 visitId와 patientId를 함께 반환 (visitId는 최신 진료 기록의 id)
-                Optional<MedicalVisit> latestVisitOpt = visitRepository.findByPatientIdOrderByVisitDateDescVisitTimeDesc(current.getId()).stream().findFirst();
-                if (latestVisitOpt.isPresent()) {
-                    result.put("visitId", latestVisitOpt.get().getVisitId());
-                } else {
-                    result.put("visitId", null);
-                }
-                result.put("patientId", current.getId());
-                result.put("patientName", current.getName());
-                if (current.getDate_of_birth() != null) {
-                    int age = LocalDate.now().getYear() - current.getDate_of_birth().getYear();
-                    result.put("patientAge", age);
-                } else {
-                    result.put("patientAge", "N/A");
-                }
-                result.put("patientGender", current.getGender());
-                result.put("patientPhone", current.getPhone_number());
+                return result;
             }
+
+            Patient current = patients.get(0);
+            result.put("success", true);
+            result.put("patientId", current.getId());
+            result.put("patientName", current.getName());
+            if (current.getDate_of_birth() != null) {
+                int age = LocalDate.now().getYear() - current.getDate_of_birth().getYear();
+                result.put("patientAge", age);
+            } else {
+                result.put("patientAge", "N/A");
+            }
+            result.put("patientGender", current.getGender());
+            result.put("patientPhone", current.getPhone_number());
+
+            // 진료 기록이 없는 경우 새 MedicalVisit 기록을 자동 생성
+            List<MedicalVisit> visits = visitRepository.findByPatientIdOrderByVisitDateDescVisitTimeDesc(current.getId());
+            MedicalVisit latestVisit;
+            if (visits.isEmpty()) {
+                latestVisit = new MedicalVisit();
+                latestVisit.setPatientId(current.getId());
+                // 필요에 따라 doctorId, visitType, visitDate, visitTime 등을 기본값으로 설정합니다.
+                latestVisit.setVisitDate(LocalDate.now());
+                latestVisit.setVisitTime(LocalTime.now());
+                latestVisit.setVisitReason(""); // 빈 문자열 등으로 처리
+                latestVisit.setVisitType("진료");
+                visitRepository.save(latestVisit);
+            } else {
+                latestVisit = visits.get(0);
+            }
+            result.put("visitId", latestVisit.getVisitId());
         } catch (Exception e) {
             result.put("success", false);
             result.put("message", "오류: " + e.getMessage());
         }
         return result;
     }
+
 
     // 새 엔드포인트: 역대 진료 기록 조회 (해당 환자의 모든 진료 기록과 처방 내역 포함)
     @GetMapping("/history")
@@ -155,7 +167,6 @@ public class MedicalVisitController {
         try {
             Patient patient = patientRepository.findById(patientId)
                     .orElseThrow(() -> new RuntimeException("환자를 찾을 수 없습니다. id=" + patientId));
-            // 예를 들어, Patient 엔티티에 consultationMemo 필드가 있다고 가정
             patient.setConsultationMemo(memo);
             patientRepository.save(patient);
             result.put("success", true);

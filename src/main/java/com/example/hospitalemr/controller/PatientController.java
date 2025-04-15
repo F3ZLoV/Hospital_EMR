@@ -1,6 +1,8 @@
 package com.example.hospitalemr.controller;
 
+import com.example.hospitalemr.domain.MedicalVisit;
 import com.example.hospitalemr.domain.Patient;
+import com.example.hospitalemr.repository.MedicalVisitRepository;
 import com.example.hospitalemr.repository.PatientRepository;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -16,9 +18,11 @@ import java.util.stream.Collectors;
 public class PatientController {
 
     private final PatientRepository patientRepository;
+    private final MedicalVisitRepository medicalVisitRepository;
 
-    public PatientController(PatientRepository patientRepository) {
+    public PatientController(PatientRepository patientRepository, MedicalVisitRepository medicalVisitRepository) {
         this.patientRepository = patientRepository;
+        this.medicalVisitRepository = medicalVisitRepository;
     }
 
     // 환자 전체 조회
@@ -224,6 +228,27 @@ public class PatientController {
         } catch (Exception e) {
             result.put("success", false);
             result.put("message", "보류 처리에 실패하였습니다.");
+        }
+        return result;
+    }
+
+    @GetMapping("/receptionMemo")
+    @ResponseBody
+    public Map<String, Object> getReceptionMemo(@RequestParam Long patientId) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            List<MedicalVisit> visits = medicalVisitRepository.findByPatientIdOrderByVisitDateDescVisitTimeDesc(patientId);
+            if (visits.isEmpty()) {
+                result.put("success", false);
+                result.put("message", "진료 기록이 없습니다.");
+            } else {
+                MedicalVisit latestVisit = visits.get(0);
+                result.put("success", true);
+                result.put("memo", latestVisit.getVisitReason());
+            }
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("message", "오류: " + e.getMessage());
         }
         return result;
     }
