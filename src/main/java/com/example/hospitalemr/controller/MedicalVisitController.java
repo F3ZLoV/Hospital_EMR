@@ -1,11 +1,7 @@
 package com.example.hospitalemr.controller;
 
-import com.example.hospitalemr.domain.MedicalVisit;
-import com.example.hospitalemr.domain.Patient;
-import com.example.hospitalemr.domain.Prescription;
-import com.example.hospitalemr.repository.MedicalVisitRepository;
-import com.example.hospitalemr.repository.PatientRepository;
-import com.example.hospitalemr.repository.PrescriptionRepository;
+import com.example.hospitalemr.domain.*;
+import com.example.hospitalemr.repository.*;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -20,13 +16,18 @@ import java.util.stream.Collectors;
 public class MedicalVisitController {
     private final MedicalVisitRepository visitRepository;
     private final PatientRepository patientRepository;
+    private final DiagnosisRepository diagnosisRepository;
+    private final EntExaminationRepository examinationRepository;
     private final PrescriptionRepository prescriptionRepository;
-
     public MedicalVisitController(MedicalVisitRepository visitRepository,
                                   PatientRepository patientRepository,
+                                  DiagnosisRepository diagnosisRepository,
+                                  EntExaminationRepository examinationRepository,
                                   PrescriptionRepository prescriptionRepository) {
         this.visitRepository = visitRepository;
         this.patientRepository = patientRepository;
+        this.diagnosisRepository = diagnosisRepository;
+        this.examinationRepository = examinationRepository;
         this.prescriptionRepository = prescriptionRepository;
     }
 
@@ -142,20 +143,31 @@ public class MedicalVisitController {
     @GetMapping("/history")
     @ResponseBody
     public List<Map<String, Object>> getVisitHistory(@RequestParam Long patientId) {
-        List<MedicalVisit> visits = visitRepository.findByPatientIdOrderByVisitDateDescVisitTimeDesc(patientId);
+        List<MedicalVisit> visits = visitRepository
+                .findByPatientIdOrderByVisitDateDescVisitTimeDesc(patientId);
         List<Map<String, Object>> history = new ArrayList<>();
+
         for (MedicalVisit visit : visits) {
+            Long vid = visit.getVisitId();
             Map<String, Object> map = new HashMap<>();
-            map.put("visitId", visit.getVisitId());
+            map.put("visitId", vid);
             map.put("visitDate", visit.getVisitDate());
             map.put("visitTime", visit.getVisitTime());
             map.put("visitReason", visit.getVisitReason());
             map.put("clinicalNotes", visit.getClinicalNotes());
-            // 처방 내역 조회
-            List<Prescription> prescriptions = prescriptionRepository.findByVisitId(visit.getVisitId());
+
+            List<Prescription> prescriptions = prescriptionRepository.findByVisitId(vid);
             map.put("prescriptions", prescriptions);
+
+            List<Diagnosis> diagnoses = diagnosisRepository.findByVisitVisitId(vid);
+            map.put("diagnoses", diagnoses);
+
+            List<EntExamination> examinations = examinationRepository.findByVisitId(vid);
+            map.put("examinations", examinations);
+
             history.add(map);
         }
+
         return history;
     }
 

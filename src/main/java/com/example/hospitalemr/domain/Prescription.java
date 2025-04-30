@@ -26,6 +26,9 @@ public class Prescription {
     @Column(name = "days")
     private Integer days;
 
+    @Column(name = "frequency_per_day", nullable = false)
+    private Integer frequencyPerDay = 1;
+
     @Column(name = "insurance_yn")
     private Boolean insuranceYn;
 
@@ -43,6 +46,14 @@ public class Prescription {
 
     // Getters and Setters
 
+
+    public Integer getFrequencyPerDay() {
+        return frequencyPerDay;
+    }
+
+    public void setFrequencyPerDay(Integer frequencyPerDay) {
+        this.frequencyPerDay = frequencyPerDay;
+    }
 
     public String getTiming() {
         return timing;

@@ -775,3 +775,99 @@ td:nth-child(7) button.day-btn { color: blue; }   /* 토요일 */
 #treatmentStatusRadios input.treatmentStatus {
     margin-right: 5px;
 }
+
+/* ===== 검사 결과 섹션 ===== */
+.examination-section {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background: #fafafa;
+    padding: 16px;
+    margin: 20px 0;
+}
+.examination-section h4 {
+    margin-top: 0;
+    font-size: 1.2rem;
+    border-bottom: 2px solid #ccc;
+    padding-bottom: 4px;
+}
+.examination-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 12px;
+}
+.examination-table th,
+.examination-table td {
+    padding: 8px 6px;
+    text-align: left;
+    border-bottom: 1px solid #e0e0e0;
+}
+.examination-table tfoot button {
+    padding: 6px 12px;
+    border: none;
+    background: #4CAF50;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.examination-table tfoot button:hover {
+    background: #45A049;
+}
+.examination-table input[readonly] {
+    background: #f9f9f9;
+    border: none;
+    color: #555;
+    text-align: center;
+}
+.examination-table input[type="file"] {
+    padding: 2px;
+}
+/* ─────────── 진단·처방과 동일한 공통 테이블 스타일 ─────────── */
+.styled-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 8px;
+    background: #fff;
+    box-shadow: 0 0 2px rgba(0,0,0,0.1);
+}
+
+.styled-table th,
+.styled-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: center;     /* 진단·처방은 가운데 정렬 */
+    font-size: 0.9rem;
+}
+
+.styled-table thead th {
+    background-color: #f0f0f0;
+    font-weight: 600;
+}
+
+.styled-table tbody tr:hover {
+    background-color: #fafafa;
+}
+
+/* 마지막 삭제 버튼 칼럼만 좁게 */
+.styled-table th:last-child,
+.styled-table td:last-child {
+    width: 40px;
+}
+
+/* 필요하면 <tfoot> 버튼 스타일만 가볍게 유지 */
+.styled-table tfoot button {
+    padding: 6px 12px;
+    border: none;
+    background: #4CAF50;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.styled-table tfoot button:hover {
+    background: #45A049;
+}
+#addExaminationRowBtn {
+    background-color: rgba(255, 243, 180, 0.69);
+    color: #000;
+    border: none;
+    cursor: pointer;
+}
