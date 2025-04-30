@@ -102,7 +102,7 @@
                     <th style="width:15%;">검사 일자</th>
                     <th style="width:25%;">검사 종류</th>
                     <th style="width:40%;">결과 요약</th>
-                    <th style="width:20%;">첨부 파일</th>
+                    <th style="width:20%;">첨부 이미지</th>
                     <th style="width:5%;">X</th>
                 </tr>
                 </thead>
@@ -1613,6 +1613,32 @@
         }
     });
 
+</script>
+<script>
+    // 전역에 선언된 변수
+    var currentVisitId = null;
+    var currentPatientId = null;
+
+    async function pollCurrentPatient() {
+        try {
+            const res = await fetch('/medicalvisit/currentPatient');
+            const data = await res.json();
+            // 새 visitId 가 넘어오면
+            if (data.success && data.visitId && data.visitId !== currentVisitId) {
+                currentVisitId  = data.visitId;
+                currentPatientId = data.patientId;
+                // UI 갱신
+                loadCurrentConsultationPatient();
+            }
+        } catch (e) {
+            console.error('진료중 환자 폴링 오류', e);
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        loadCurrentConsultationPatient();
+        setInterval(pollCurrentPatient, 5000);
+    });
 </script>
 </body>
 </html>

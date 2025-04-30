@@ -57,18 +57,14 @@ public class ExaminationController {
             e.setExamType(type);
             e.setExamDate(LocalDate.parse(dateStr));
             e.setExamSummary(summary);
-            // 업로드된 파일들 (여러 개)
             List<MultipartFile> files = request.getFiles("exams[" + i + "].mediaFiles");
             if (!files.isEmpty()) {
-                // 첫 번째 파일만 저장할게 아니면 리스트 필드로 바꾸세요
                 for (MultipartFile mf : files) {
                     if (mf.isEmpty()) continue;
                     String filename = UUID.randomUUID() + "_" + mf.getOriginalFilename();
                     Path dest = Paths.get(uploadDir).resolve("exam_images").resolve(filename);
                     Files.createDirectories(dest.getParent());
                     Files.copy(mf.getInputStream(), dest, StandardCopyOption.REPLACE_EXISTING);
-
-                    // 도메인에 List<String> media 경로로 바꿔서 add 해주면 다중 이미지도 가능합니다.
                     e.getExamMediaList().add("/uploads/exam_images/" + filename);
                 }
             }
