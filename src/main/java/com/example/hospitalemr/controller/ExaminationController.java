@@ -33,8 +33,6 @@ public class ExaminationController {
         }
         Long visitId = Long.valueOf(visitIdStr);
 
-        // 파라미터에서 몇 건이 왔는지 확인 (exams[0].examType 이 존재하는 인덱스 수만큼)
-        // 편의상 파라미터 키들에서 인덱스 최대값을 찾아냅니다.
         int maxIdx = request.getParameterMap().keySet().stream()
                 .filter(k -> k.startsWith("exams["))
                 .mapToInt(k -> Integer.parseInt(k.substring(6, k.indexOf(']',6))))
@@ -48,7 +46,6 @@ public class ExaminationController {
             String summary = request.getParameter("exams[" + i + "].examSummary");
             String dateStr = request.getParameter("exams[" + i + "].examDate");
             if ((type == null && summary == null) || dateStr == null) {
-                // 이 인덱스는 건너뜀
                 continue;
             }
 

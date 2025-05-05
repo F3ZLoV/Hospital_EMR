@@ -11,30 +11,15 @@ public class EntExamination {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long examId;
-
     private Long visitId;
-
-    /** 검사 종류 */
     private String examType;
-
-    /** 검사 요약 – 추가된 필드 */
     private String examSummary;
-
-    /** 검사 결과 상세 텍스트 */
     @Lob
     private String examResultsText;
-
-    /** 검사 일자 */
     private LocalDate examDate;
-
-    /** 추가 메모 */
     @Lob
     private String examNotes;
 
-    /**
-     * 다중 이미지 경로 저장.
-     * ent_examination_media 테이블에 exam_id 외래키로 media_path 로 저장됩니다.
-     */
     @ElementCollection
     @CollectionTable(
             name = "ent_examination_media",

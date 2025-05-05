@@ -11,8 +11,8 @@ public class Appointment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int appointment_id;
 
-    @Column(name = "patient_id")
-    private int patient_id;  // FK to Patient
+    @Column(name="patient_id")
+    private int patient_id;
     private int staff_id;    // FK to MedicalStaff
 
     @Column(name = "appointment_date")
@@ -79,4 +79,5 @@ public class Appointment {
     public void setRemarks(String remarks) {
         this.remarks = remarks;
     }
+
 }
