@@ -1,0 +1,110 @@
+n
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+body {
+    font-family: 'Noto Sans KR', sans-serif;
+    background-color: #fafafa;
+    color: #333;
+    line-height: 1.6;
+}
+.container {
+    max-width: 1024px;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+/* Header */
+.site-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #0052cc;
+    color: #fff;
+    padding: 0.75rem 1rem;
+}
+.site-header .logo a {
+    color: #fff;
+    text-decoration: none;
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+.nav-list {
+    list-style: none;
+    display: flex;
+    gap: 1rem;
+}
+.nav-list a {
+    color: #fff;
+    text-decoration: none;
+    font-weight: 500;
+}
+.nav-list a:hover {
+    text-decoration: underline;
+}
+
+/* Footer */
+.site-footer {
+    text-align: center;
+    padding: 1rem;
+    background: #f0f0f0;
+    margin-top: 2rem;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+th, td {
+    padding: 0.75rem;
+    border: 1px solid #e0e0e0;
+    text-align: left;
+}
+th {
+    background: #f7f7f7;
+    font-weight: 600;
+}
+tr:nth-child(even) {
+    background: #fcfcfc;
+}
+
+/* Buttons */
+button, .btn {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border: none;
+    background: #0052cc;
+    color: #fff;
+    font-size: 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+}
+button:hover, .btn:hover {
+    background: #003d99;
+}
+
+/* Forms */n
+           input, select, textarea {
+               width: 100%;
+               padding: 0.5rem;
+               border: 1px solid #ccc;
+               border-radius: 4px;
+               margin-top: 0.25rem;
+               font-size: 1rem;
+           }
+label {
+    font-weight: 500;
+    display: block;
+    margin-top: 1rem;
+}
+textarea {
+    resize: vertical;
+}

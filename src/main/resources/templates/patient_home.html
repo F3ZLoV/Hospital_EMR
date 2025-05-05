@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <title>환자 홈</title>
+  <link rel="stylesheet" th:href="@{/css/common.css}" />
+  <link rel="stylesheet" th:href="@{/css/patient.css}" />
+</head>
+<body>
+<!-- Header -->
+<div th:insert="~{fragments/header :: header}"></div>
+
+<main class="container">
+  <!-- 환영 메시지 -->
+  <section class="welcome-section">
+    <h2 th:text="'안녕하세요, ' + ${patient.name} + '님!'">안녕하세요, 환자님!</h2>
+  </section>
+
+  <!-- 개인정보와 액션 버튼 -->
+  <div class="info-and-actions">
+    <section class="info-section">
+      <h3>개인 정보</h3>
+      <dl>
+        <dt>생년월일</dt><dd th:text="${patient.date_of_birth}"></dd>
+        <dt>성별</dt><dd th:text="${patient.gender}"></dd>
+        <dt>전화번호</dt><dd th:text="${patient.phone_number}"></dd>
+        <dt>이메일</dt><dd th:text="${patient.email}"></dd>
+        <dt>주소</dt><dd th:text="${patient.address}"></dd>
+      </dl>
+    </section>
+    <div class="quick-actions">
+      <button class="btn" onclick="openNewAppointmentModal()">예약 등록하기</button>
+      <button class="btn" onclick="openNotificationSettingsModal()">알림 설정</button>
+    </div>
+  </div>
+
+  <!-- 진료 내역 -->
+  <section class="visits-section">
+    <h3>진료 내역</h3>
+    <table>
+      <thead>
+      <tr><th>날짜</th><th>시간</th><th>사유</th><th>상세보기</th></tr>
+      </thead>
+      <tbody>
+      <tr th:each="v : ${visits}">
+        <td th:text="${v.visitDate}"></td>
+        <td th:text="${v.visitTime}"></td>
+        <td th:text="${v.visitReason}"></td>
+        <td>
+          <button class="btn" th:onclick="|showVisitDetail(${v.visitId})|">상세보기</button>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 전체 처방 내역 (visit_id 상관없이) -->
+  <section class="prescriptions-section">
+    <h3>전체 처방 내역</h3>
+    <table>
+      <thead><tr><th>코드</th><th>명칭</th><th>용량</th><th>일수</th></tr></thead>
+      <tbody>
+      <tr th:each="p : ${prescriptions}">
+        <td th:text="${p.drugCode}"></td>
+        <td th:text="${p.drugName}"></td>
+        <td th:text="${p.dosage}"></td>
+        <td th:text="${p.days}"></td>
+      </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 예약 내역 -->
+  <section class="appointments-section">
+    <h3>예약 내역</h3>
+    <table>
+      <thead><tr><th>날짜</th><th>시간</th><th>상태</th><th>메모</th></tr></thead>
+      <tbody>
+      <tr th:each="a : ${appointments}">
+        <td th:text="${a.appointment_date}"></td>
+        <td th:text="${a.appointment_time}"></td>
+        <td th:text="${a.status}"></td>
+        <td th:text="${a.remarks}"></td>
+      </tr>
+      </tbody>
+    </table>
+  </section>
+</main>
+
+<!-- Footer -->
+<div th:insert="~{fragments/footer :: footer}"></div>
+
+<!-- 진료 상세 모달 -->
+<div id="visitDetailModal" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="closeDetailModal()">&times;</span>
+    <h3>진료 상세</h3>
+    <p>
+      <strong>날짜:</strong> <span id="modalVisitDate"></span>
+      <strong>시간:</strong> <span id="modalVisitTime"></span>
+    </p>
+    <h4>진단</h4>
+    <table id="diagnosisDetailTable">
+      <thead>
+      <tr><th>코드</th><th>명칭</th><th>과</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <h4>처방</h4>
+    <table id="prescriptionDetailTable">
+      <thead>
+      <tr><th>코드</th><th>명칭</th><th>용량</th><th>일수</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- 모달: 신규 예약 등록 -->
+<div id="newAppointmentModal" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="closeNewAppointmentModal()">&times;</span>
+    <h3>새 예약 등록</h3>
+    <form th:action="@{/appointment}" method="post">
+      <input type="hidden" name="patient_id" th:value="${patient.id}" />
+      <div><label>의료진 ID: <input type="number" name="staff_id" required/></label></div>
+      <div><label>날짜: <input type="date" name="appointment_date" required/></label></div>
+      <div><label>시간: <input type="time" name="appointment_time" required/></label></div>
+      <div><label>메모: <input type="text" name="remarks"/></label></div>
+      <button type="submit" class="btn">등록</button>
+    </form>
+  </div>
+</div>
+
+<!-- 모달: 알림 설정 -->
+<div id="notificationSettingsModal" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="closeNotificationSettingsModal()">&times;</span>
+    <h3>알림 설정</h3>
+    <form id="notificationSettingsForm" onsubmit="saveAlertSettings(); return false;">
+      <label>알림 시간 설정:</label>
+      <div class="alert-time-inputs">
+        <input type="number" id="alertHours" name="hours" min="0" value="1"/> 시간
+        <input type="number" id="alertMinutes" name="minutes" min="0" max="59" value="0"/> 분 전
+      </div>
+      <fieldset>
+        <legend>알림 켜기/끄기</legend>
+        <label>
+          <input type="radio" name="enableAlerts" value="on" checked/>
+          켜기
+        </label>
+        <label>
+          <input type="radio" name="enableAlerts" value="off"/>
+          끄기
+        </label>
+      </fieldset>
+      <button type="submit" class="btn">저장</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  // 신규 예약 모달
+  function openNewAppointmentModal() {
+    document.getElementById('newAppointmentModal').style.display = 'flex';
+  }
+  function closeNewAppointmentModal() {
+    document.getElementById('newAppointmentModal').style.display = 'none';
+  }
+  // 알림 설정 모달
+  function openNotificationSettingsModal() {
+    document.getElementById('notificationSettingsModal').style.display = 'flex';
+  }
+  function closeNotificationSettingsModal() {
+    document.getElementById('notificationSettingsModal').style.display = 'none';
+  }
+  function saveAlertSettings() {
+    const selected = document.querySelector('input[name="enableAlerts"]:checked').value;
+    const enabled = (selected === 'on');
+    const hours   = document.getElementById('alertHours').value;
+    const minutes = document.getElementById('alertMinutes').value;
+
+    alert(`알림 ${enabled ? '활성화' : '비활성화'} — ${hours}시간 ${minutes}분 전`);
+
+    closeNotificationSettingsModal();
+  }
+  // 모달 외부 클릭 시 닫기
+  window.onclick = function(e) {
+    if (e.target.classList.contains('modal')) {
+      e.target.style.display = 'none';
+    }
+  }
+</script>
+<script>
+  function showVisitDetail(visitId) {
+    console.log('상세보기 호출, visitId=', visitId);
+    fetch(`/patient/visit/${visitId}/detail`)
+            .then(res => {
+              if (!res.ok) throw new Error(`HTTP ${res.status}`);
+              return res.json();
+            })
+            .then(data => {
+              console.log('받은 데이터:', data);
+              document.getElementById('modalVisitDate').textContent  = data.visitDate;
+              document.getElementById('modalVisitTime').textContent  = data.visitTime;
+              // 진단 테이블 채우기
+              const diagBody = document.querySelector('#diagnosisDetailTable tbody');
+              diagBody.innerHTML = '';
+              data.diagnoses.forEach(d => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${d.diagnosisCode}</td><td>${d.diagnosisName}</td><td>${d.department}</td>`;
+                diagBody.appendChild(tr);
+              });
+              // 처방 테이블 채우기
+              const presBody = document.querySelector('#prescriptionDetailTable tbody');
+              presBody.innerHTML = '';
+              data.prescriptions.forEach(p => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${p.drugCode}</td><td>${p.drugName}</td><td>${p.dosage}</td><td>${p.days}</td>`;
+                presBody.appendChild(tr);
+              });
+              // 모달을 화면 중앙(flex)으로 띄우기
+              document.getElementById('visitDetailModal').style.display = 'flex';
+            })
+            .catch(err => {
+              console.error('상세보기 오류:', err);
+              alert('상세 정보를 불러오는 중 오류가 발생했습니다.');
+            });
+  }
+
+  function closeDetailModal() {
+    document.getElementById('visitDetailModal').style.display = 'none';
+  }
+
+  // 모달 외부 클릭 시 닫기
+  window.addEventListener('click', e => {
+    if (e.target.id === 'visitDetailModal') {
+      closeDetailModal();
+    }
+  });
+</script>
+</body>
+</html>

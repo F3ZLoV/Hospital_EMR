@@ -66,7 +66,7 @@
                     </div>
                     <div class="patient-memo">
                         <h4>진료 메모</h4>
-                        <textarea id="consultationMemo" placeholder="환자 관련 메모를 작성하세요."></textarea>
+                        <textarea id="clinicalMemo" placeholder="환자 관련 메모를 작성하세요."></textarea>
                     </div>
                 </div>
             </div>
@@ -211,6 +211,10 @@
             </div>
             <div class="visit-history-detail" style="flex: 1; border: 1px solid #ccc; padding: 10px; background: #fff;">
                 <h4>진료 날짜: <span id="historyVisitDate">-</span> <span id="historyVisitTime"></span></h4>
+                <div>
+                    <strong>진료 사유:</strong>
+                    <div id="historyReasonSection"></div>
+                </div>
                 <div>
                     <strong>진료 메모:</strong>
                     <div id="historyMemoSection"></div>
@@ -662,24 +666,38 @@
         // "진료중" 버튼 클릭 시
         else if (e.target && e.target.classList.contains("in-consultation-btn")) {
             const patientId = e.target.getAttribute("data-id");
-            if (confirm("진료 완료 처리 하시겠습니까?")) {
-                // 진료 완료 API 호출
-                fetch('/patient/call/complete', {
-                    method: "POST",
-                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                    body: "patientId=" + encodeURIComponent(patientId)
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        alert(data.message);
-                        // 완료 처리 후 대기 리스트 새로고침 (환자가 제거되어야 함)
-                        refreshDoctorWaitingList();
-                    })
-                    .catch(error => {
-                        console.error("진료 완료 처리 실패:", error);
-                        alert("진료 완료 처리에 실패하였습니다.");
+            if (!patientId) return;
+            if (!confirm("진료 완료 처리 하시겠습니까?")) return;
+
+            fetch('/patient/call/complete', {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: "patientId=" + encodeURIComponent(patientId)
+            })
+                .then(res => res.json())
+                .then(data => {
+                    alert(data.message);
+                    return fetch('/medicalvisit/cancel', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: new URLSearchParams({ patientId: patientId })
                     });
-            }
+                })
+                .then(res2 => res2.json())
+                .then(json2 => {
+                    if (json2.success) {
+                        console.log('MedicalVisit 최신 레코드 삭제 완료');
+                    } else {
+                        console.warn('MedicalVisit 삭제 실패:', json2.message);
+                    }
+                })
+                .then(() => {
+                    refreshDoctorWaitingList();
+                })
+                .catch(error => {
+                    console.error("진료 완료 처리 실패:", error);
+                    alert("진료 완료 처리에 실패하였습니다.");
+                });
         }
     });
 
@@ -851,29 +869,29 @@
     }
 
     // 현재 진료중인 환자 정보를 서버에서 가져와 UI에 뿌림
-    function loadCurrentConsultationPatient() {
-        fetch('/medicalvisit/currentPatient')
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    currentVisitId = data.visitId;
-                    currentPatientId = data.patientId;
-                    console.log(currentVisitId, currentPatientId);
-                    // 환자 정보 UI 업데이트
-                    document.getElementById("patientName").textContent = data.patientName;
-                    document.getElementById("patientAge").textContent = data.patientAge;
-                    document.getElementById("patientGender").textContent = data.patientGender;
-                    document.getElementById("patientPhone").textContent = data.patientPhone;
-                    // currentPatientId가 존재하면 역대 진료 기록도 불러옴
-                    loadReceptionMemo(currentPatientId);
-                    loadVisitHistory(currentPatientId);
-                } else {
-                    // 현재 진료중인 환자가 없을 경우 안내 문구 표시
-                    const consultationContainer = document.querySelector(".main-content");
-                    consultationContainer.innerHTML = '<p style="color: gray; text-align: center; font-style: italic; font-size: 1.2rem;">환자를 호출해 주세요.</p>';
-                }
-            })
-            .catch(error => console.error("현재 환자 조회 오류:", error));
+    async function loadCurrentConsultationPatient() {
+        const res = await fetch('/medicalvisit/currentPatient');
+        const data = await res.json();
+        if (!data.success || !data.visitId) {
+            document.querySelector('.main-content').innerHTML =
+                '<p style="text-align:center;color:#999;">환자를 호출하고 접수 기록을 완료해주세요.</p>';
+            return;
+        }
+
+        // 존재하는 visitId가 있을 때만 UI 업데이트 & 과거 이력 로딩
+        currentVisitId  = data.visitId;
+        currentPatientId = data.patientId;
+        document.getElementById("patientName").textContent   = data.patientName;
+        document.getElementById("patientAge").textContent    = data.patientAge;
+        document.getElementById("patientGender").textContent = data.patientGender;
+        document.getElementById("patientPhone").textContent  = data.patientPhone;
+
+        document.getElementById("clinicalMemo").value = data.clinicalMemo || "";
+        // (원래) 접수 메모를 별도로 Patient 엔드포인트에서 가져오는 로직도 분리하세요
+        loadReceptionMemo(currentPatientId);
+
+        // 과거 진료 기록은 visitId가 있을 때만
+        loadVisitHistory(currentPatientId);
     }
 
     document.addEventListener("DOMContentLoaded", function() {
@@ -1003,9 +1021,9 @@
         fetch('/medicalvisit/history?patientId=' + encodeURIComponent(patientId))
             .then(res => res.json())
             .then(data => {
-                console.log("history response:", data);
-                // 만약 data.visits에 배열이 있으면…
-                renderVisitHistoryList(Array.isArray(data) ? data : data.visits || []);
+                const allVisits = Array.isArray(data) ? data : data.visits || [];
+                const historyVisits = allVisits.filter(v => v.visitId !== currentVisitId);
+                renderVisitHistoryList(historyVisits);
             })
             .catch(console.error);
     }
@@ -1030,13 +1048,17 @@
             li.textContent = visit.visitDate + "\n" + formatTime(visit.visitTime);
             li.style.whiteSpace = "pre-line";
             li.style.cursor = "pointer";
-            li.addEventListener("click", () => showVisitDetail(visit));
+            li.addEventListener("click", () => {
+                showVisitDetail(visit);
+                listElem.querySelectorAll("li").forEach(el => el.classList.remove("selected"));
+                li.classList.add("selected");
+            });
             listElem.appendChild(li);
         });
-
-        if (visits.length > 0) {
-            // 첫 번째 항목 표시
-            showVisitDetail(visits[0]);
+        const first = listElem.querySelector("li");
+        if (first) {
+            first.classList.add("selected");
+            visits[0] && showVisitDetail(visits[0]);
         } else {
             // 날짜/시간/메모/기록 초기화
             document.getElementById("historyVisitDate").textContent = "-";
@@ -1065,57 +1087,83 @@
     function showVisitDetail(visit) {
         // 1) 날짜/시간/메모/기록
         document.getElementById("historyVisitDate").textContent = visit.visitDate || "-";
-        document.getElementById("historyVisitTime").textContent = visit.visitTime || "";
-        document.getElementById("historyMemoSection").textContent = visit.visitReason || "";
+        document.getElementById("historyVisitTime").textContent = visit.visitTime ? formatTime(visit.visitTime) : "";
+        document.getElementById("historyReasonSection").textContent  = visit.visitReason  || "";
+        document.getElementById("historyMemoSection").textContent = visit.clinicalMemo || "";
         document.getElementById("historyNotesSection").innerHTML = visit.clinicalNotes || "";
 
-        // 2) 검사 결과 요약 및 이미지
-        const summaryBox = document.getElementById("historyExamSummary");
+        // 2) 검사 결과
+        const summaryBox      = document.getElementById("historyExamSummary");
         const imagesContainer = document.getElementById("examImagesContainer");
-        const prevBtn = document.getElementById("examPrevBtn");
-        const nextBtn = document.getElementById("examNextBtn");
+        const prevBtn         = document.getElementById("examPrevBtn");
+        const nextBtn         = document.getElementById("examNextBtn");
 
-        summaryBox.innerHTML = "";
+        // 초기화
+        summaryBox.innerHTML      = "";
         imagesContainer.innerHTML = "";
-        prevBtn.disabled = true;
-        nextBtn.disabled = true;
+        prevBtn.disabled = nextBtn.disabled = true;
 
-        if (visit.examinations && visit.examinations.length) {
-            // 검사 요약
-            visit.examinations.forEach(exam => {
-                const div = document.createElement("div");
-                div.innerHTML = `
-        <strong>${exam.examDate} / ${exam.examType}</strong><br>
-        ${exam.examResultsText || ""}<br>
-        <em>${exam.examNotes || ""}</em>
-      `;
-                summaryBox.appendChild(div);
-            });
+        // visitId에 해당하는 'examDate, examType, examSummary, mediaList' 받아오기
+        fetch(`/examination/history?visitId=${visit.visitId}`)
+            .then(res => res.json())
+            .then(exams => {
+                if (!exams.length) {
+                    summaryBox.innerHTML = "<p style='color:#999;'>검사 기록이 없습니다.</p>";
+                    return;
+                }
 
-            // 다중 이미지를 2개씩 페이징
-            const imgs = visit.examinations.flatMap(e => e.mediaList || []);
-            let page = 0, perPage = 2;
-
-            function renderImgs() {
-                imagesContainer.innerHTML = "";
-                const slice = imgs.slice(page * perPage, page * perPage + perPage);
-                slice.forEach(src => {
-                    const img = document.createElement("img");
-                    img.src = src;
-                    img.style.maxWidth = "120px";
-                    img.style.margin = "0 4px";
-                    imagesContainer.appendChild(img);
+                // ——— 2-1) examType + examSummary 렌더 ———
+                exams.forEach(exam => {
+                    const div = document.createElement("div");
+                    div.style.marginBottom = "6px";
+                    div.innerHTML = `
+            <strong>${exam.examDate} / ${exam.examType}</strong><br>
+            <span>${exam.examSummary || ""}</span>
+          `;
+                    summaryBox.appendChild(div);
                 });
-                prevBtn.disabled = page === 0;
-                nextBtn.disabled = (page + 1) * perPage >= imgs.length;
-            }
 
-            prevBtn.onclick = () => { page--; renderImgs(); };
-            nextBtn.onclick = () => { page++; renderImgs(); };
-            if (imgs.length) renderImgs();
-        } else {
-            summaryBox.innerHTML = "<p style='color:#999;'>검사 결과가 없습니다.</p>";
-        }
+                // ——— 2-2) mediaList 평탄화 → 기존 이미지 페이징 로직 호출 ———
+                const imgs    = exams.flatMap(e => e.mediaList || []);
+                let   page    = 0;
+                const perPage = 4;
+
+                function renderPage() {
+                    imagesContainer.innerHTML = "";
+                    imgs
+                        .slice(page * perPage, page * perPage + perPage)
+                        .forEach(src => {
+                            const img = document.createElement("img");
+                            img.src             = src;
+                            img.style.maxWidth  = "120px";
+                            img.style.margin    = "0 4px";
+                            img.style.objectFit = "cover";
+                            imagesContainer.appendChild(img);
+                        });
+                    prevBtn.disabled = (page === 0);
+                    nextBtn.disabled = ((page + 1) * perPage >= imgs.length);
+                }
+
+                prevBtn.onclick = () => {
+                    if (page > 0) {
+                        page--;
+                        renderPage();
+                    }
+                };
+                nextBtn.onclick = () => {
+                    if ((page + 1) * perPage < imgs.length) {
+                        page++;
+                        renderPage();
+                    }
+                };
+
+                renderPage();
+            })
+            .catch(err => {
+                console.error("검사 결과 로드 실패", err);
+                summaryBox.innerHTML      = "<p style='color:#c00;'>검사 결과 로드 중 오류</p>";
+                imagesContainer.innerHTML = "";
+            });
 
         // 3) 과거 진단
         const diagList = document.getElementById("historyDiagnosisList");
@@ -1130,19 +1178,19 @@
             diagList.innerHTML = "<li style='color:#999;'>진단 기록이 없습니다.</li>";
         }
 
-        // 4) 처방 내역 (기존 그대로)
+        // 4) 처방 내역
         const tbody = document.getElementById("historyPrescriptionTbody");
         tbody.innerHTML = "";
         if (visit.prescriptions && visit.prescriptions.length) {
             visit.prescriptions.forEach(p => {
                 const tr = document.createElement("tr");
                 tr.innerHTML = `
-        <td>${p.drugCode||""}</td>
-        <td>${p.drugName||""}</td>
-        <td>${p.dosage||""}</td>
-        <td>${p.days!=null?p.days:""}</td>
-        <td>${p.frequency||""}</td>
-        <td>${p.insuranceYn?"급여":"비급여"}</td>
+        <td>${p.drugCode   || ""}</td>
+        <td>${p.drugName   || ""}</td>
+        <td>${p.dosage     || ""}</td>
+        <td>${p.days != null ? p.days : ""}</td>
+        <td>${p.frequency  || ""}</td>
+        <td>${p.insuranceYn ? "급여" : "비급여"}</td>
       `;
                 tbody.appendChild(tr);
             });
@@ -1150,6 +1198,17 @@
             tbody.innerHTML = "<tr><td colspan='6' style='text-align:center;color:#999;'>처방 내역 없음</td></tr>";
         }
     }
+
+    // 보조 함수: "HH:mm:ss" → "오전/오후 H:mm"
+    function formatTime(timeStr) {
+        if (!timeStr) return "";
+        const [hh, mm] = timeStr.split(":");
+        let hour = parseInt(hh, 10), period = "오전";
+        if (hour >= 12) { period = "오후"; hour -= 12; }
+        if (hour === 0) hour = 12;
+        return `${period} ${hour}:${mm}`;
+    }
+
 
 
     if (currentPatientId) {
@@ -1353,7 +1412,7 @@
             alert("진료 완료 버튼이 클릭되었습니다."); // 클릭 확인용
 
             // 진료 메모와 기록 값 가져오기
-            const memo = document.getElementById("consultationMemo").value;
+            const memo = document.getElementById("clinicalMemo").value;
             const record = document.getElementById("recordEditor").innerHTML;
             console.log("Memo:", memo);
             console.log("Record:", record);
@@ -1366,21 +1425,29 @@
             console.log("currentVisitId:", currentVisitId, "currentPatientId:", currentPatientId);
 
             try {
-                // 1. 진료 기록 업데이트 요청 (/medicalvisit/updateNotes)
-                let updateNotesResponse = await fetch('/medicalvisit/updateNotes', {
+                // 1) 진료 메모(clinicalMemo) 업데이트
+                let memoRes = await fetch('/medicalvisit/updateClinicalMemo', {
                     method: "POST",
                     headers: { "Content-Type": "application/x-www-form-urlencoded" },
                     body: new URLSearchParams({
                         visitId: currentVisitId,
-                        memo: memo,
+                        clinicalMemo: memo
+                    })
+                });
+                let memoJson = await memoRes.json();
+                if (!memoJson.success) throw new Error(memoJson.message || "진료 메모 저장 실패");
+
+                // 2) 진료 기록(clinicalNotes) 업데이트
+                let noteRes = await fetch('/medicalvisit/updateClinicalNotes', {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: new URLSearchParams({
+                        visitId: currentVisitId,
                         record: record
                     })
                 });
-                let updateNotesResult = await updateNotesResponse.json();
-                if (!updateNotesResult.success) {
-                    throw new Error("진료 기록 업데이트 실패: " + updateNotesResult.message);
-                }
-                console.log("진료 기록 업데이트 성공");
+                let noteJson = await noteRes.json();
+                if (!noteJson.success) throw new Error(noteJson.message || "진료 기록 저장 실패");
 
                 // 2. 처방 정보 수집 및 저장 (/prescription/save)
                 const prescriptionRows = document.querySelectorAll("#prescriptionTable tbody tr");

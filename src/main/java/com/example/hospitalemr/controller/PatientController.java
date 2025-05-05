@@ -1,13 +1,13 @@
 package com.example.hospitalemr.controller;
 
-import com.example.hospitalemr.domain.MedicalVisit;
-import com.example.hospitalemr.domain.Patient;
-import com.example.hospitalemr.repository.MedicalVisitRepository;
-import com.example.hospitalemr.repository.PatientRepository;
+import com.example.hospitalemr.domain.*;
+import com.example.hospitalemr.repository.*;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.nio.file.AccessDeniedException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -19,10 +19,16 @@ public class PatientController {
 
     private final PatientRepository patientRepository;
     private final MedicalVisitRepository medicalVisitRepository;
+    private final PrescriptionRepository prescriptionRepository;
+    private final AppointmentRepository appointmentRepository;
+    private final DiagnosisRepository diagnosisRepository;
 
-    public PatientController(PatientRepository patientRepository, MedicalVisitRepository medicalVisitRepository) {
+    public PatientController(PatientRepository patientRepository, MedicalVisitRepository medicalVisitRepository, PrescriptionRepository prescriptionRepository, AppointmentRepository appointmentRepository, DiagnosisRepository diagnosisRepository) {
         this.patientRepository = patientRepository;
         this.medicalVisitRepository = medicalVisitRepository;
+        this.prescriptionRepository = prescriptionRepository;
+        this.appointmentRepository = appointmentRepository;
+        this.diagnosisRepository = diagnosisRepository;
     }
 
     // 환자 전체 조회
@@ -252,4 +258,87 @@ public class PatientController {
         }
         return result;
     }
+    /**
+     * 환자 홈 화면
+     */
+    @GetMapping("/home")
+    public String showPatientHome(HttpSession session, Model model) {
+        Long patientId = (Long) session.getAttribute("patientId");
+        if (patientId == null) {
+            return "redirect:/login";
+        }
+
+        // 본인 정보
+        Patient patient = patientRepository.findById(patientId)
+                .orElseThrow(() -> new RuntimeException("환자를 찾을 수 없습니다. id=" + patientId));
+        model.addAttribute("patient", patient);
+
+        // 진료 내역
+        List<MedicalVisit> visits = medicalVisitRepository
+                .findByPatientIdOrderByVisitDateDescVisitTimeDesc(patientId);
+        model.addAttribute("visits", visits);
+
+        // 처방 내역 (모든 진료기록에 연결된 처방)
+        List<Prescription> prescriptions = new ArrayList<>();
+        for (MedicalVisit v : visits) {
+            prescriptions.addAll(prescriptionRepository.findByVisitId(v.getVisitId()));
+        }
+        model.addAttribute("prescriptions", prescriptions);
+
+        // 내 예약 내역
+        List<Appointment> appts = appointmentRepository.findAll().stream()
+                .filter(a -> a.getPatient_id() == patientId.intValue())
+                .sorted(Comparator.comparing(Appointment::getAppointment_date)
+                        .thenComparing(Appointment::getAppointment_time))
+                .collect(Collectors.toList());
+        model.addAttribute("appointments", appts);
+
+        // 신규 예약 폼 바인딩용 빈 객체
+        model.addAttribute("newAppointment", new com.example.hospitalemr.domain.Appointment());
+
+        return "patient_home";  // src/main/resources/templates/patient_home.html
+    }
+
+    /**
+     * 다가오는 예약 1시간 전 알림용 API
+     */
+    @GetMapping("/appointments/upcoming")
+    @ResponseBody
+    public List<Appointment> upcomingAppointments(HttpSession session) {
+        Long patientId = (Long) session.getAttribute("patientId");
+        LocalDateTime now = LocalDateTime.now();
+        List<Appointment> all = appointmentRepository.findAll().stream()
+                .filter(a -> a.getPatient_id() == patientId.intValue())
+                .collect(Collectors.toList());
+
+        return all.stream()
+                .filter(a -> {
+                    LocalDateTime appt = LocalDateTime.of(
+                            a.getAppointment_date(), a.getAppointment_time());
+                    return !appt.isBefore(now) && appt.isBefore(now.plusHours(1));
+                })
+                .collect(Collectors.toList());
+    }
+
+    @GetMapping("/visit/{visitId}/detail")
+    @ResponseBody
+    public Map<String, Object> getVisitDetail(@PathVariable Long visitId,
+                                              HttpSession session) throws AccessDeniedException {
+        Long patientId = (Long) session.getAttribute("patientId");
+        // 보안: 환자 본인 방문기록인지 검사
+        MedicalVisit visit = medicalVisitRepository.findById(visitId)
+                .orElseThrow(() -> new RuntimeException("존재하지 않는 방문입니다."));
+        if (!visit.getPatientId().equals(patientId)) {
+            throw new AccessDeniedException("본인 기록만 조회 가능합니다.");
+        }
+        List<Diagnosis> diagList = diagnosisRepository.findByVisitVisitId(visitId);
+        List<Prescription> presList = prescriptionRepository.findByVisitId(visitId);
+        Map<String, Object> map = new HashMap<>();
+        map.put("visitDate", visit.getVisitDate().toString());
+        map.put("visitTime", visit.getVisitTime().toString());
+        map.put("diagnoses", diagList);
+        map.put("prescriptions", presList);
+        return map;
+    }
+
 }

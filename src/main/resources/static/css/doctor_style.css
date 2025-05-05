@@ -871,3 +871,14 @@ td:nth-child(7) button.day-btn { color: blue; }   /* 토요일 */
     border: none;
     cursor: pointer;
 }
+
+.visit-history-list ul li {
+    padding: 8px;
+    cursor: pointer;
+}
+
+.visit-history-list ul li.selected {
+    background-color: #e0f3ff;
+    font-weight: bold;
+    border-left: 4px solid #007acc;
+}

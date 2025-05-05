@@ -1,7 +1,15 @@
 package com.example.hospitalemr.controller;
 
-import com.example.hospitalemr.domain.*;
-import com.example.hospitalemr.repository.*;
+import com.example.hospitalemr.domain.MedicalVisit;
+import com.example.hospitalemr.domain.Patient;
+import com.example.hospitalemr.domain.Diagnosis;
+import com.example.hospitalemr.domain.EntExamination;
+import com.example.hospitalemr.domain.Prescription;
+import com.example.hospitalemr.repository.MedicalVisitRepository;
+import com.example.hospitalemr.repository.PatientRepository;
+import com.example.hospitalemr.repository.DiagnosisRepository;
+import com.example.hospitalemr.repository.EntExaminationRepository;
+import com.example.hospitalemr.repository.PrescriptionRepository;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -14,47 +22,54 @@ import java.util.stream.Collectors;
 @Controller
 @RequestMapping("/medicalvisit")
 public class MedicalVisitController {
+
     private final MedicalVisitRepository visitRepository;
-    private final PatientRepository patientRepository;
-    private final DiagnosisRepository diagnosisRepository;
+    private final PatientRepository     patientRepository;
+    private final DiagnosisRepository   diagnosisRepository;
     private final EntExaminationRepository examinationRepository;
-    private final PrescriptionRepository prescriptionRepository;
+    private final PrescriptionRepository   prescriptionRepository;
+
     public MedicalVisitController(MedicalVisitRepository visitRepository,
                                   PatientRepository patientRepository,
                                   DiagnosisRepository diagnosisRepository,
                                   EntExaminationRepository examinationRepository,
                                   PrescriptionRepository prescriptionRepository) {
-        this.visitRepository = visitRepository;
-        this.patientRepository = patientRepository;
-        this.diagnosisRepository = diagnosisRepository;
+        this.visitRepository       = visitRepository;
+        this.patientRepository     = patientRepository;
+        this.diagnosisRepository   = diagnosisRepository;
         this.examinationRepository = examinationRepository;
-        this.prescriptionRepository = prescriptionRepository;
+        this.prescriptionRepository= prescriptionRepository;
     }
 
+    /**
+     * 1) 접수(create): visitReason(접수 메모)만 저장
+     */
     @PostMapping("/create")
     @ResponseBody
-    public Map<String, Object> createMedicalVisit(
+    public Map<String,Object> createMedicalVisit(
             @RequestParam Long patientId,
             @RequestParam Long doctorId,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate visitDate,
-            @RequestParam @DateTimeFormat(pattern = "HH:mm") LocalTime visitTime,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate visitDate,
+            @RequestParam @DateTimeFormat(pattern = "HH:mm")
+            LocalTime visitTime,
             @RequestParam String visitReason,
             @RequestParam String visitType) {
 
-        Map<String, Object> result = new HashMap<>();
+        Map<String,Object> result = new HashMap<>();
         try {
-            MedicalVisit medicalVisit = new MedicalVisit();
-            medicalVisit.setPatientId(patientId);
-            medicalVisit.setDoctorId(doctorId);
-            medicalVisit.setVisitDate(visitDate);
-            medicalVisit.setVisitTime(visitTime);
-            medicalVisit.setVisitReason(visitReason);
-            medicalVisit.setVisitType(visitType);
-
-            visitRepository.save(medicalVisit);
+            MedicalVisit mv = new MedicalVisit();
+            mv.setPatientId(patientId);
+            mv.setDoctorId(doctorId);
+            mv.setVisitDate(visitDate);
+            mv.setVisitTime(visitTime);
+            mv.setVisitReason(visitReason);  // **접수 메모**
+            mv.setVisitType(visitType);
+            // clinicalMemo는 아직 비어있음
+            visitRepository.save(mv);
 
             result.put("success", true);
-            result.put("message", "진료 접수가 성공적으로 등록되었습니다.");
+            result.put("visitId", mv.getVisitId());
         } catch (Exception e) {
             result.put("success", false);
             result.put("message", "진료 접수 등록에 실패하였습니다.");
@@ -62,40 +77,57 @@ public class MedicalVisitController {
         return result;
     }
 
-    @PostMapping("/updateNotes")
+    /**
+     * 2) 호출(call): 버튼 클릭 시 명시적으로 호출 플래그를 세우고
+     *                새 MedicalVisit 레코드를 만듭니다.
+     */
+    @PostMapping("/call")
     @ResponseBody
-    public Map<String, Object> updateMedicalVisitNotes(
-            @RequestParam Long visitId,
-            @RequestParam String memo,       // 진료 메모 (예: visitReason)
-            @RequestParam String record) {   // 진료 기록 (예: clinicalNotes)
-        Map<String, Object> result = new HashMap<>();
+    public Map<String,Object> callPatient(
+            @RequestParam Long patientId,
+            @RequestParam Long doctorId) {
+
+        Map<String,Object> result = new HashMap<>();
         try {
-            MedicalVisit visit = visitRepository.findById(visitId)
-                    .orElseThrow(() -> new RuntimeException("진료 기록을 찾을 수 없습니다. id=" + visitId));
-            visit.setVisitReason(memo);
-            visit.setClinicalNotes(record);
-            visitRepository.save(visit);
+            // ① 환자 호출 플래그 업데이트
+            Patient p = patientRepository.findById(patientId)
+                    .orElseThrow(() -> new RuntimeException("환자를 찾을 수 없습니다."));
+            p.setCalled(true);
+            patientRepository.save(p);
+
+            // ② 진료 레코드 생성
+            MedicalVisit mv = new MedicalVisit();
+            mv.setPatientId(patientId);
+            mv.setDoctorId(doctorId);
+            mv.setVisitDate(LocalDate.now());
+            mv.setVisitTime(LocalTime.now());
+            mv.setVisitReason("");   // 진료 메모는 별도 처리
+            mv.setVisitType("진료");
+            visitRepository.save(mv);
+
             result.put("success", true);
-            result.put("message", "진료 기록이 업데이트되었습니다.");
+            result.put("visitId", mv.getVisitId());
         } catch (Exception e) {
-            e.printStackTrace();
             result.put("success", false);
-            result.put("message", "진료 기록 업데이트에 실패하였습니다.");
+            result.put("message", "호출 처리에 실패하였습니다.");
         }
         return result;
     }
 
-    // 현재 진료중인 환자 정보를 반환하는 엔드포인트 (기존 코드 참고)
+    /**
+     * 3) currentPatient: 이미 만들어진 최신 MedicalVisit만 조회
+     */
     @GetMapping("/currentPatient")
     @ResponseBody
-    public Map<String, Object> getCurrentConsultationPatient() {
-        Map<String, Object> result = new HashMap<>();
+    public Map<String,Object> getCurrentConsultationPatient() {
+        Map<String,Object> result = new HashMap<>();
         try {
-            // waiting = true, called = true 인 환자 중 receptionTime이 가장 최신인 환자 선택
+            // (1) waiting && called 인 환자 중 가장 최근 접수 시간 순
             List<Patient> patients = patientRepository.findAll().stream()
                     .filter(p -> p.isWaiting() && p.isCalled())
-                    .sorted((p1, p2) -> p2.getReceptionTime().compareTo(p1.getReceptionTime()))
+                    .sorted(Comparator.comparing(Patient::getReceptionTime).reversed())
                     .collect(Collectors.toList());
+
             if (patients.isEmpty()) {
                 result.put("success", false);
                 result.put("message", "현재 진료중인 환자가 없습니다.");
@@ -104,7 +136,7 @@ public class MedicalVisitController {
 
             Patient current = patients.get(0);
             result.put("success", true);
-            result.put("patientId", current.getId());
+            result.put("patientId",   current.getId());
             result.put("patientName", current.getName());
             if (current.getDate_of_birth() != null) {
                 int age = LocalDate.now().getYear() - current.getDate_of_birth().getYear();
@@ -113,24 +145,21 @@ public class MedicalVisitController {
                 result.put("patientAge", "N/A");
             }
             result.put("patientGender", current.getGender());
-            result.put("patientPhone", current.getPhone_number());
+            result.put("patientPhone",  current.getPhone_number());
 
-            // 진료 기록이 없는 경우 새 MedicalVisit 기록을 자동 생성
-            List<MedicalVisit> visits = visitRepository.findByPatientIdOrderByVisitDateDescVisitTimeDesc(current.getId());
-            MedicalVisit latestVisit;
+            // (2) 기존에 만들어진 가장 최신 MedicalVisit 레코드만 꺼내서
+            List<MedicalVisit> visits = visitRepository
+                    .findByPatientIdOrderByVisitDateDescVisitTimeDesc(current.getId());
             if (visits.isEmpty()) {
-                latestVisit = new MedicalVisit();
-                latestVisit.setPatientId(current.getId());
-                // 필요에 따라 doctorId, visitType, visitDate, visitTime 등을 기본값으로 설정합니다.
-                latestVisit.setVisitDate(LocalDate.now());
-                latestVisit.setVisitTime(LocalTime.now());
-                latestVisit.setVisitReason(""); // 빈 문자열 등으로 처리
-                latestVisit.setVisitType("진료");
-                visitRepository.save(latestVisit);
+                result.put("visitId", null);
             } else {
-                latestVisit = visits.get(0);
+                MedicalVisit latest = visits.get(0);
+                result.put("visitId",        latest.getVisitId());
+                result.put("visitReason",    latest.getVisitReason());
+                result.put("clinicalNotes",  latest.getClinicalNotes());
+                result.put("clinicalMemo",   latest.getClinicalMemo());
             }
-            result.put("visitId", latestVisit.getVisitId());
+
         } catch (Exception e) {
             result.put("success", false);
             result.put("message", "오류: " + e.getMessage());
@@ -138,77 +167,98 @@ public class MedicalVisitController {
         return result;
     }
 
+    /**
+     * 4) 진료 메모(clinicalMemo)만 업데이트
+     *    (visitReason, clinicalNotes 절대 건드리지 않습니다)
+     */
+    @PostMapping("/updateClinicalMemo")
+    @ResponseBody
+    public Map<String,Object> updateClinicalMemo(
+            @RequestParam Long visitId,
+            @RequestParam String clinicalMemo) {
 
-    // 새 엔드포인트: 역대 진료 기록 조회 (해당 환자의 모든 진료 기록과 처방 내역 포함)
+        Map<String,Object> result = new HashMap<>();
+        try {
+            MedicalVisit v = visitRepository.findById(visitId)
+                    .orElseThrow(() -> new RuntimeException("진료 레코드를 찾을 수 없습니다."));
+            v.setClinicalMemo(clinicalMemo);
+            visitRepository.save(v);
+            result.put("success", true);
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("message", "진료 메모 업데이트에 실패하였습니다.");
+        }
+        return result;
+    }
+
+    /**
+     * 5) 진료 기록(Clinical Notes) 업데이트
+     */
+    @PostMapping("/updateClinicalNotes")
+    @ResponseBody
+    public Map<String,Object> updateClinicalNotes(
+            @RequestParam Long visitId,
+            @RequestParam("record") String clinicalNotes) {
+
+        Map<String,Object> result = new HashMap<>();
+        try {
+            MedicalVisit v = visitRepository.findById(visitId)
+                    .orElseThrow(() -> new RuntimeException("진료 레코드를 찾을 수 없습니다."));
+            v.setClinicalNotes(clinicalNotes);
+            visitRepository.save(v);
+            result.put("success", true);
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("message", "진료 기록 업데이트에 실패하였습니다.");
+        }
+        return result;
+    }
+
+    /**
+     * 6) 역대 진료 기록 조회
+     */
     @GetMapping("/history")
     @ResponseBody
-    public List<Map<String, Object>> getVisitHistory(@RequestParam Long patientId) {
+    public List<Map<String,Object>> getVisitHistory(@RequestParam Long patientId) {
         List<MedicalVisit> visits = visitRepository
                 .findByPatientIdOrderByVisitDateDescVisitTimeDesc(patientId);
-        List<Map<String, Object>> history = new ArrayList<>();
+        List<Map<String,Object>> history = new ArrayList<>();
 
-        for (MedicalVisit visit : visits) {
-            Long vid = visit.getVisitId();
-            Map<String, Object> map = new HashMap<>();
-            map.put("visitId", vid);
-            map.put("visitDate", visit.getVisitDate());
-            map.put("visitTime", visit.getVisitTime());
-            map.put("visitReason", visit.getVisitReason());
-            map.put("clinicalNotes", visit.getClinicalNotes());
-
-            List<Prescription> prescriptions = prescriptionRepository.findByVisitId(vid);
-            map.put("prescriptions", prescriptions);
-
-            List<Diagnosis> diagnoses = diagnosisRepository.findByVisitVisitId(vid);
-            map.put("diagnoses", diagnoses);
-
-            List<EntExamination> examinations = examinationRepository.findByVisitId(vid);
-            map.put("examinations", examinations);
-
-            history.add(map);
+        for (MedicalVisit v : visits) {
+            Map<String,Object> m = new HashMap<>();
+            m.put("visitId",       v.getVisitId());
+            m.put("visitDate",     v.getVisitDate());
+            m.put("visitTime",     v.getVisitTime());
+            m.put("visitReason",   v.getVisitReason());
+            m.put("clinicalNotes", v.getClinicalNotes());
+            m.put("clinicalMemo",  v.getClinicalMemo());
+            m.put("prescriptions", prescriptionRepository.findByVisitId(v.getVisitId()));
+            m.put("diagnoses",      diagnosisRepository.findByVisitVisitId(v.getVisitId()));
+            m.put("examinations",   examinationRepository.findByVisitId(v.getVisitId()));
+            history.add(m);
         }
-
         return history;
     }
 
-    // 환자 상담 메모 업데이트 (Patient 테이블 업데이트)
-    @PostMapping("/updatePatientMemo")
+    /**
+     * 7) 대기열에서 취소할 때: 해당 환자의 최신 MedicalVisit 레코드를 삭제
+     */
+    @PostMapping("/cancel")
     @ResponseBody
-    public Map<String, Object> updatePatientMemo(@RequestParam Long patientId, @RequestParam String memo) {
-        Map<String, Object> result = new HashMap<>();
+    public Map<String,Object> cancelVisit(@RequestParam Long patientId) {
+        Map<String,Object> result = new HashMap<>();
         try {
-            Patient patient = patientRepository.findById(patientId)
-                    .orElseThrow(() -> new RuntimeException("환자를 찾을 수 없습니다. id=" + patientId));
-            patient.setConsultationMemo(memo);
-            patientRepository.save(patient);
+            List<MedicalVisit> visits = visitRepository
+                    .findByPatientIdOrderByVisitDateDescVisitTimeDesc(patientId);
+            if (!visits.isEmpty()) {
+                visitRepository.delete(visits.get(0));
+            }
             result.put("success", true);
-            result.put("message", "환자 상담 메모가 업데이트되었습니다.");
         } catch (Exception e) {
             result.put("success", false);
-            result.put("message", "업데이트 실패: " + e.getMessage());
+            result.put("message", "취소 처리에 실패하였습니다.");
         }
         return result;
     }
 
-    // 진료 기록(Clinical Notes) 업데이트 (MedicalVisit 테이블 업데이트)
-    @PostMapping("/updateClinicalNotes")
-    @ResponseBody
-    public Map<String, Object> updateClinicalNotes(@RequestParam Long patientId, @RequestParam String record) {
-        Map<String, Object> result = new HashMap<>();
-        try {
-            List<MedicalVisit> visits = visitRepository.findByPatientIdOrderByVisitDateDescVisitTimeDesc(patientId);
-            if (visits.isEmpty()) {
-                throw new RuntimeException("진료 기록이 없습니다.");
-            }
-            MedicalVisit latestVisit = visits.get(0);
-            latestVisit.setClinicalNotes(record);
-            visitRepository.save(latestVisit);
-            result.put("success", true);
-            result.put("message", "진료 기록이 업데이트되었습니다.");
-        } catch (Exception e) {
-            result.put("success", false);
-            result.put("message", "업데이트 실패: " + e.getMessage());
-        }
-        return result;
-    }
 }

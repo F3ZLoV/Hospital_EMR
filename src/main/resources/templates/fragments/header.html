@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<th:block th:fragment="header">
+  <header class="site-header">
+    <div class="logo">
+      <a th:href="@{/}">이비인후과 EMR</a>
+    </div>
+    <nav>
+      <ul class="nav-list">
+        <li><a th:href="@{/patient/home}">마이페이지</a></li>
+        <li><a th:href="@{/logout}">로그아웃</a></li>
+      </ul>
+    </nav>
+  </header>
+</th:block>
+</body>
+</html>

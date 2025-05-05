@@ -415,36 +415,43 @@
 
     // "예" 버튼 처리: 실제로 환자 삭제 (대기 리스트에서 제거)
     document.getElementById("confirmYesBtn").onclick = function() {
-        if (deletePatientId) {
-            fetch('/patient/waiting/remove', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                body: 'patientId=' + encodeURIComponent(deletePatientId)
+        if (!deletePatientId) return;
+        fetch('/patient/waiting/remove', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'patientId=' + encodeURIComponent(deletePatientId)
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert("대기 리스트에서 제거되었습니다.");
+                    refreshWaitingList();
+                    // ── 여기에 MedicalVisit 레코드 삭제 요청 추가 ──
+                    return fetch('/medicalvisit/cancel', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: new URLSearchParams({ patientId: deletePatientId })
+                    });
+                } else {
+                    throw new Error(data.message);
+                }
             })
-                .then(response => {
-                    if (!response.ok) throw new Error("Network response was not ok");
-                    return response.json();
-                })
-                .then(data => {
-                    if(data.success) {
-                        alert("대기 리스트에서 제거되었습니다.");
-                        refreshWaitingList();
-                    } else {
-                        alert("대기 리스트에서 제거에 실패했습니다.");
-                    }
-                })
-                .catch(error => {
-                    console.error("Error:", error);
-                    alert("대기 리스트에서 제거 중 오류 발생");
-                })
-                .finally(() => {
-                    // 확인 모달 닫기 및 변수 초기화
-                    document.getElementById("confirmModal").style.display = "none";
-                    deletePatientId = null;
-                });
-        }
+            .then(res2 => res2.json())
+            .then(json2 => {
+                if (json2.success) {
+                    console.log('MedicalVisit 최신 레코드 삭제 완료');
+                } else {
+                    console.warn('MedicalVisit 삭제 실패:', json2.message);
+                }
+            })
+            .catch(err => {
+                console.error("취소 처리 중 오류:", err);
+                alert("대기열 취소 처리 중 오류가 발생하였습니다.");
+            })
+            .finally(() => {
+                deletePatientId = null;
+                document.getElementById("confirmModal").style.display = "none";
+            });
     };
 
     setInterval(() => {

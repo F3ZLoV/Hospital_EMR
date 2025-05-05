@@ -27,11 +27,23 @@ public class MedicalVisit {
     @Column(name = "visit_reason")
     private String visitReason;
 
+    @Column(name="clinical_memo")
+    private String clinicalMemo;
+
     @Column(name = "clinical_notes")
     private String clinicalNotes;
 
     @Column(name = "visit_type")
     private String visitType;
+
+
+    public String getClinicalMemo() {
+        return clinicalMemo;
+    }
+
+    public void setClinicalMemo(String clinicalMemo) {
+        this.clinicalMemo = clinicalMemo;
+    }
 
     public Long getVisitId() {
         return visitId;
