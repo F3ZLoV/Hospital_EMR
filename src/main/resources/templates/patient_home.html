@@ -42,7 +42,7 @@
       <tr><th>날짜</th><th>시간</th><th>사유</th><th>상세보기</th></tr>
       </thead>
       <tbody>
-      <tr th:each="v : ${visits}">
+      <tr th:each="v : ${visits}" th:if="${v.visitId} != ${currentVisitId}">
         <td th:text="${v.visitDate}"></td>
         <td th:text="${v.visitTime}"></td>
         <td th:text="${v.visitReason}"></td>
@@ -71,12 +71,13 @@
   </section>
 
   <!-- 예약 내역 -->
-  <section class="appointments-section">
+  <section class="appointments-section" id="appointmentsSection">
     <h3>예약 내역</h3>
     <table>
       <thead><tr><th>날짜</th><th>시간</th><th>상태</th><th>메모</th></tr></thead>
       <tbody>
-      <tr th:each="a : ${appointments}">
+      <tr th:each="a : ${appointments}"
+          th:attr="data-date=${a.appointment_date},data-time=${a.appointment_time}">
         <td th:text="${a.appointment_date}"></td>
         <td th:text="${a.appointment_time}"></td>
         <td th:text="${a.status}"></td>
@@ -85,9 +86,9 @@
       </tbody>
     </table>
   </section>
-</main>
 
-<!-- Footer -->
+
+  <!-- Footer -->
 <div th:insert="~{fragments/footer :: footer}"></div>
 
 <!-- 진료 상세 모달 -->
@@ -116,7 +117,7 @@
   </div>
 </div>
 
-<!-- 모달: 신규 예약 등록 -->
+<!-- 신규 예약 등록 모달 -->
 <div id="newAppointmentModal" class="modal">
   <div class="modal-content">
     <span class="close" onclick="closeNewAppointmentModal()">&times;</span>
@@ -132,7 +133,7 @@
   </div>
 </div>
 
-<!-- 모달: 알림 설정 -->
+<!-- 알림 설정 모달 -->
 <div id="notificationSettingsModal" class="modal">
   <div class="modal-content">
     <span class="close" onclick="closeNotificationSettingsModal()">&times;</span>
@@ -156,6 +157,15 @@
       </fieldset>
       <button type="submit" class="btn">저장</button>
     </form>
+  </div>
+</div>
+
+<!-- 예약 알림 모달 -->
+<div id="alertModal" class="modal">
+  <div class="modal-content">
+    <h3>예약 시간</h3>
+    <p id="alertText"></p>
+    <button class="btn" onclick="closeAlertModal()">확인</button>
   </div>
 </div>
 
@@ -239,5 +249,102 @@
     }
   });
 </script>
+<script th:inline="javascript">
+  /*<![CDATA[*/
+  const patientId = [[${patient.id}]];
+  let notificationSettings = {
+    enabled:   [[${alertSetting.enabled}]],
+    hoursBefore: [[${alertSetting.hoursBefore}]],
+    minutesBefore: [[${alertSetting.minutesBefore}]]
+  };
+  /*]]>*/
+</script>
+<script>
+  // 1) 페이지 로딩 시 한 번만 DB에서 읽어오기
+  fetch(`/alertSetting/${patientId}`)
+          .then(res => res.json())
+          .then(cfg => {
+            notificationSettings.enabled     = cfg.enabled;
+            notificationSettings.hoursBefore = cfg.hoursBefore;
+            notificationSettings.minutesBefore = cfg.minutesBefore;
+          })
+          .catch(err => console.error('알림 설정 로드 실패:', err));
+
+  // 2) 모달 띄우기/닫기
+  function showAlertModal(text) {
+    document.getElementById('alertText').textContent = text;
+    document.getElementById('alertModal').style.display = 'flex';
+  }
+  function closeAlertModal() {
+    document.getElementById('alertModal').style.display = 'none';
+  }
+</script>
+<script>
+  function saveAlertSettings() {
+    const selected = document.querySelector('input[name="enableAlerts"]:checked').value;
+    const enabled  = (selected === 'on');
+    const hours    = parseInt(document.getElementById('alertHours').value, 10);
+    const minutes  = parseInt(document.getElementById('alertMinutes').value, 10);
+
+    fetch(`/alertSetting/${patientId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        enabled: enabled,
+        hoursBefore: hours,
+        minutesBefore: minutes
+      })
+    })
+            .then(res => res.json())
+            .then(cfg => {
+              // 저장된 설정으로 갱신
+              notificationSettings = {
+                enabled: cfg.enabled,
+                hoursBefore: cfg.hoursBefore,
+                minutesBefore: cfg.minutesBefore
+              };
+              alert('알림 설정이 저장되었습니다.');
+              closeNotificationSettingsModal();
+            })
+            .catch(err => {
+              console.error('알림 설정 저장 실패:', err);
+              alert('저장 중 오류가 발생했습니다.');
+            });
+  }
+</script>
+  <script>
+    function checkAppointmentAlerts() {
+      if (!notificationSettings.enabled) return;
+
+      const now = new Date();
+      document
+              .querySelectorAll('#appointmentsSection tbody tr[data-date][data-time]')
+              .forEach(tr => {
+                const dateStr = tr.getAttribute('data-date');   // "2025-05-10"
+                const timeStr = tr.getAttribute('data-time');   // "14:30"
+                const apptDate = new Date(`${dateStr}T${timeStr}:00`);
+
+                const offsetMs =
+                        notificationSettings.hoursBefore  * 3600_000 +
+                        notificationSettings.minutesBefore *   60_000;
+                const alertTime = new Date(apptDate.getTime() - offsetMs);
+
+                // (alertTime ≤ now < alertTime + 1초) 이면 한번만 띄우기
+                if (now >= alertTime && now < alertTime + 1_000) {
+                  const diffMs = apptDate - now;
+                  if (diffMs > 0) {
+                    const leftH = Math.floor(diffMs / 3600_000);
+                    const leftM = Math.floor((diffMs % 3600_000) / 60_000);
+                    showAlertModal(`예약시간 ${leftH}시간 ${leftM}분 남았습니다.`);
+                  }
+                }
+              });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      checkAppointmentAlerts();                // 즉시 체크
+      setInterval(checkAppointmentAlerts, 10_000);  // 10초마다 반복
+    });
+  </script>
 </body>
 </html>

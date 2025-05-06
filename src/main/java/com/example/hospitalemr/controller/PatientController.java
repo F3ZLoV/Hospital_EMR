@@ -2,6 +2,7 @@ package com.example.hospitalemr.controller;
 
 import com.example.hospitalemr.domain.*;
 import com.example.hospitalemr.repository.*;
+import com.example.hospitalemr.service.AlertSettingService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -22,13 +23,22 @@ public class PatientController {
     private final PrescriptionRepository prescriptionRepository;
     private final AppointmentRepository appointmentRepository;
     private final DiagnosisRepository diagnosisRepository;
+    private final MedicalVisitController  medicalVisitController;
+    private final AlertSettingService alertSettingService;
 
-    public PatientController(PatientRepository patientRepository, MedicalVisitRepository medicalVisitRepository, PrescriptionRepository prescriptionRepository, AppointmentRepository appointmentRepository, DiagnosisRepository diagnosisRepository) {
+    public PatientController(PatientRepository patientRepository,
+                             MedicalVisitRepository medicalVisitRepository,
+                             PrescriptionRepository prescriptionRepository,
+                             AppointmentRepository appointmentRepository,
+                             DiagnosisRepository diagnosisRepository,
+                             MedicalVisitController medicalVisitController, AlertSettingService alertSettingService) {
         this.patientRepository = patientRepository;
         this.medicalVisitRepository = medicalVisitRepository;
         this.prescriptionRepository = prescriptionRepository;
         this.appointmentRepository = appointmentRepository;
         this.diagnosisRepository = diagnosisRepository;
+        this.medicalVisitController = medicalVisitController;
+        this.alertSettingService = alertSettingService;
     }
 
     // 환자 전체 조회
@@ -278,6 +288,15 @@ public class PatientController {
                 .findByPatientIdOrderByVisitDateDescVisitTimeDesc(patientId);
         model.addAttribute("visits", visits);
 
+        // 현재 진료중인 visitId 조회
+        Map<String,Object> current = medicalVisitController.getCurrentConsultationPatient();
+        Long currentVisitId = null;
+        if (Boolean.TRUE.equals(current.get("success"))
+                && current.get("visitId") instanceof Long) {
+            currentVisitId = (Long) current.get("visitId");
+        }
+        model.addAttribute("currentVisitId", currentVisitId);
+
         // 처방 내역 (모든 진료기록에 연결된 처방)
         List<Prescription> prescriptions = new ArrayList<>();
         for (MedicalVisit v : visits) {
@@ -295,6 +314,9 @@ public class PatientController {
 
         // 신규 예약 폼 바인딩용 빈 객체
         model.addAttribute("newAppointment", new com.example.hospitalemr.domain.Appointment());
+
+        AlertSetting setting = alertSettingService.loadOrCreate(patientId);
+        model.addAttribute("alertSetting", setting);
 
         return "patient_home";  // src/main/resources/templates/patient_home.html
     }
