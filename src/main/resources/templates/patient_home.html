@@ -87,6 +87,7 @@
     </table>
   </section>
 
+</main>
 
   <!-- Footer -->
 <div th:insert="~{fragments/footer :: footer}"></div>
@@ -122,7 +123,8 @@
   <div class="modal-content">
     <span class="close" onclick="closeNewAppointmentModal()">&times;</span>
     <h3>새 예약 등록</h3>
-    <form th:action="@{/appointment}" method="post">
+    <div id="errorMsg" style="color: red; display: none;"></div>
+    <form id="appointmentForm">
       <input type="hidden" name="patient_id" th:value="${patient.id}" />
       <div><label>의료진 ID: <input type="number" name="staff_id" required/></label></div>
       <div><label>날짜: <input type="date" name="appointment_date" required/></label></div>
@@ -344,6 +346,38 @@
     document.addEventListener('DOMContentLoaded', () => {
       checkAppointmentAlerts();                // 즉시 체크
       setInterval(checkAppointmentAlerts, 10_000);  // 10초마다 반복
+    });
+  </script>
+  <script>
+    document.getElementById("appointmentForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+
+      const form = e.target;
+      const formData = new FormData(form);
+
+      fetch("/appointment", {
+        method: "POST",
+        body: formData
+      })
+              .then(res => res.json())
+              .then(data => {
+                const errorDiv = document.getElementById("errorMsg");
+                if (data.success) {
+                  errorDiv.style.display = "none";
+                  errorDiv.textContent = "";
+                  closeNewAppointmentModal();  // 모달 닫기
+                  location.reload();           // 새로고침으로 반영
+                } else {
+                  errorDiv.textContent = data.message;
+                  errorDiv.style.display = "block";
+                }
+              })
+              .catch(err => {
+                console.error("예약 등록 실패:", err);
+                const errorDiv = document.getElementById("errorMsg");
+                errorDiv.textContent = "알 수 없는 오류가 발생했습니다.";
+                errorDiv.style.display = "block";
+              });
     });
   </script>
 </body>

@@ -4,8 +4,9 @@
     <meta charset="UTF-8">
     <title>이비인후과 EMR - 간호사 메인화면</title>
     <link rel="stylesheet" th:href="@{/css/nurse_style.css}" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* 모달 기본 스타일 (필요시 nurse_style.css에서 별도 관리 가능) */
+        /* 모달 기본 스타일 */
         .modal {
             display: none;
             position: fixed;
@@ -13,6 +14,15 @@
             left: 0; top: 0;
             width: 100%; height: 100%;
             background: rgba(0, 0, 0, 0.5);
+        }
+        .modal-content {
+            background: #fff;
+            margin: 5% auto;
+            padding: 20px;
+            width: 80%;
+            max-height: 90vh;
+            overflow-y: auto;
+            border-radius: 10px;
         }
     </style>
 </head>
@@ -65,6 +75,8 @@
     <div class="main-content">
         <button id="openModalBtn" class="new-patient-btn">신규 환자 등록</button>
         <button id="openAppointmentListModalBtn" class="new-patient-btn">진료 예약 목록</button>
+        <button id="openPrescriptionModalBtn" class="new-patient-btn">처방전 출력</button>
+        <button id="openStatsModalBtn">통계 보기</button>
     </div>
 
     <!-- 우측 배너: 캘린더 영역 -->
@@ -300,6 +312,42 @@
             <button type="submit">접수 등록</button>
         </form>
         <div id="receptionFormMessage" style="margin-top: 10px; text-align: center;"></div>
+    </div>
+</div>
+
+<!-- 처방전 모달 -->
+<div id="prescriptionModal" class="modal">
+    <div class="modal-content">
+        <span class="close" id="closePrescriptionModal">&times;</span>
+        <h3>최근 진료 기록</h3>
+        <table>
+            <thead>
+            <tr><th>방문일</th><th>방문시간</th><th>사유</th><th>출력</th></tr>
+            </thead>
+            <tbody id="visitListTbody">
+            <!-- JS로 채워집니다 -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 통계 모달 -->
+<div id="statsModal" class="modal">
+    <div class="modal-content">
+        <span id="closeStatsModal" style="float:right; cursor:pointer;">&times;</span>
+        <h2>현황 통계</h2>
+
+        <!-- 진료 건수 추이 -->
+        <h3>진료 수 추세</h3>
+        <canvas id="visitTrendChart"></canvas>
+
+        <!-- 처방 약 top 5 -->
+        <h3>처방 약 Top 5</h3>
+        <canvas id="topDrugsChart"></canvas>
+
+        <!-- 연령대별 환자 분포 -->
+        <h3>연령대별 환자 분포</h3>
+        <canvas id="ageDistributionChart"></canvas>
     </div>
 </div>
 
@@ -1286,6 +1334,92 @@
             });
     }
 
+</script>
+<script>
+    const prescModal = document.getElementById('prescriptionModal');
+    document.getElementById('openPrescriptionModalBtn').onclick = () => {
+        // 방문 리스트 받아오기
+        fetch('/nurse/prescriptions')
+            .then(r=>r.json())
+            .then(visits=>{
+                const tb = document.getElementById('visitListTbody');
+                tb.innerHTML = visits.map(v=>`
+          <tr>
+            <td>${v.visitDate}</td>
+            <td>${v.visitTime}</td>
+            <td>${v.visitReason}</td>
+            <td><button onclick="printPrescription(${v.visitId})">출력</button></td>
+          </tr>
+        `).join('');
+                prescModal.style.display = 'flex';
+            });
+    };
+    document.getElementById('closePrescriptionModal').onclick = () => prescModal.style.display='none';
+
+    // 출력: 새 탭으로 PDF 열기
+    function printPrescription(visitId) {
+        window.open(`/nurse/prescriptions/print/${visitId}`, '_blank');
+    }
+</script>
+<script>
+    // 모달 열기/닫기
+    const modal = document.getElementById("statsModal");
+    document.getElementById("openStatsModalBtn").onclick = () => {
+        modal.style.display = "block";
+        loadAllStats();
+    };
+    document.getElementById("closeStatsModal").onclick = () => modal.style.display = "none";
+    window.onclick = e => { if (e.target === modal) modal.style.display = "none"; };
+
+    async function loadAllStats() {
+        const res = await fetch("/nurse/stats/all");
+        const data = await res.json();
+
+        // 진료 수 추세
+        const vtc = document.getElementById("visitTrendChart").getContext("2d");
+        new Chart(vtc, {
+            type: 'line',
+            data: {
+                labels: data.visits.map(d => d.date),
+                datasets: [{
+                    label: '진료 건수',
+                    data: data.visits.map(d => d.count),
+                    borderWidth: 2,
+                    fill: false
+                }]
+            },
+            options: { responsive: true }
+        });
+
+        // 약 top 5
+        const tdctx = document.getElementById("topDrugsChart").getContext("2d");
+        new Chart(tdctx, {
+            type: 'bar',
+            data: {
+                labels: data.topDrugs.map(d => d.name),
+                datasets: [{
+                    label: '처방 수',
+                    data: data.topDrugs.map(d => d.count),
+                    borderWidth: 1
+                }]
+            },
+            options: { responsive: true }
+        });
+
+        // 연령대별 분포
+        const ac = document.getElementById("ageDistributionChart").getContext("2d");
+        new Chart(ac, {
+            type: 'doughnut',
+            data: {
+                labels: data.ageGroups.map(d => d.range),
+                datasets: [{
+                    label: '인원수',
+                    data: data.ageGroups.map(d => d.count)
+                }]
+            },
+            options: { responsive: true }
+        });
+    }
 </script>
 </body>
 </html>

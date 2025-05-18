@@ -33,17 +33,41 @@ public class AppointmentController {
     @ResponseBody
     public Map<String, Object> createAppointment(@ModelAttribute Appointment appointment) {
         Map<String, Object> result = new HashMap<>();
+
         try {
-            appointment.setStatus("예약"); // 무조건 예약 상태로 설정
+            LocalDate newDate = appointment.getAppointment_date();
+            LocalTime newTime = appointment.getAppointment_time();
+
+            // 같은 날짜의 예약 모두 불러옴
+            List<Appointment> sameDateAppointments = appointmentRepository.findAll().stream()
+                    .filter(appt -> appt.getAppointment_date().equals(newDate))
+                    .collect(Collectors.toList());
+
+            boolean conflict = sameDateAppointments.stream().anyMatch(existing -> {
+                long diff = Math.abs(java.time.Duration.between(existing.getAppointment_time(), newTime).toMinutes());
+                return diff < 5;
+            });
+
+            if (conflict) {
+                result.put("success", false);
+                result.put("message", "예약 시간이 기존 예약과 5분 이내로 겹칩니다.");
+                return result;
+            }
+
+            // 중복 없을 경우 저장
+            appointment.setStatus("예약");
             appointmentRepository.save(appointment);
+
             result.put("success", true);
             result.put("message", "예약 등록에 성공하였습니다.");
         } catch (Exception e) {
             result.put("success", false);
             result.put("message", "예약 등록에 실패하였습니다.");
         }
+
         return result;
     }
+
 
     // 예약 목록 조회 (예약 리스트 모달에 표시할 fragment 반환)
     @GetMapping("/list")

@@ -36,7 +36,6 @@ public class MedicalVisit {
     @Column(name = "visit_type")
     private String visitType;
 
-
     public String getClinicalMemo() {
         return clinicalMemo;
     }
