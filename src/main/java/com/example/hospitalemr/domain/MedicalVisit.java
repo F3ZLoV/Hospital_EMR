@@ -1,5 +1,6 @@
 package com.example.hospitalemr.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -35,6 +36,15 @@ public class MedicalVisit {
 
     @Column(name = "visit_type")
     private String visitType;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "patient_id", insertable = false, updatable = false)
+    @JsonIgnore
+    private Patient patient;
+
+    public Patient getPatient() {
+        return patient;
+    }
 
     public String getClinicalMemo() {
         return clinicalMemo;

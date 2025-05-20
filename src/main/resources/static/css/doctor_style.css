@@ -610,7 +610,7 @@ td:nth-child(7) button.day-btn { color: blue; }   /* 토요일 */
 /* 2열 그리드를 만들기: 라벨 + 입력 칸 쌍으로 정렬 */
 .treatmentplan-grid {
     display: grid;
-    grid-template-columns: 140px 1fr;
+    grid-template-columns: 100px 1fr;
     grid-gap: 10px 20px;
     align-items: center;
 }
@@ -686,14 +686,14 @@ td:nth-child(7) button.day-btn { color: blue; }   /* 토요일 */
 }
 
 .middle-content .right-column {
-    flex: 0 0 65%;
+    flex: 0 0 60%;
 }
 .middle-content > .column.left-column {
-    flex: 0 0 55% !important;
+    flex: 0 0 65% !important;
 }
 
 .middle-content > .column.right-column {
-    flex: 0 0 40% !important;
+    flex: 0 0 30% !important;
 }
 .diagnosis-form-container {
     border: 1px solid #ccc;

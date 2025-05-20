@@ -322,7 +322,7 @@
         <h3>최근 진료 기록</h3>
         <table>
             <thead>
-            <tr><th>방문일</th><th>방문시간</th><th>사유</th><th>출력</th></tr>
+            <tr><th>방문일</th><th>방문시간</th><th>사유</th><th>처방전 출력</th></tr>
             </thead>
             <tbody id="visitListTbody">
             <!-- JS로 채워집니다 -->
@@ -1388,7 +1388,20 @@
                     fill: false
                 }]
             },
-            options: { responsive: true }
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1,
+                            callback: function(value) {
+                                return Number(value).toFixed(0); // y축을 항상 정수로
+                            }
+                        }
+                    }
+                }
+            }
         });
 
         // 약 top 5
