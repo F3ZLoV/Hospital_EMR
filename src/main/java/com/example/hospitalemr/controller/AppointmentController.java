@@ -133,4 +133,28 @@ public class AppointmentController {
         return result;
     }
 
+    @GetMapping("/calendar")
+    @ResponseBody
+    public List<Map<String, Object>> getPatientAppointmentsForCalendar(@RequestParam("patientId") Integer patientId) {
+        List<Appointment> appointments = appointmentRepository.findByPatientId(patientId);
+        return appointments.stream().map(a -> {
+            Map<String, Object> event = new HashMap<>();
+            // 시간 형식 얻기 (HH:mm)
+            String timeStr = a.getAppointment_time().toString().substring(0, 5);
+
+            // 한글 오전/오후 + 12시간제 포맷 만들기
+            int hour24 = Integer.parseInt(timeStr.substring(0, 2));
+            int minute = Integer.parseInt(timeStr.substring(3, 5));
+            String ampm = (hour24 < 12) ? "오전" : "오후";
+            int hour12 = hour24 % 12;
+            if (hour12 == 0) hour12 = 12;
+            // 7:02를 07:02로, 12시간제 표기
+            String hourStr = String.format("%02d", hour12);
+            String prettyTime = ampm + " " + hourStr + ":" + String.format("%02d", minute) + " 예약";
+
+            event.put("title", prettyTime); // 예: "오후 07:02 예약"
+            event.put("start", a.getAppointment_date() + "T" + a.getAppointment_time()); // ISO 8601 format
+            return event;
+        }).collect(Collectors.toList());
+    }
 }

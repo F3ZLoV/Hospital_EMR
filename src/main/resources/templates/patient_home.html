@@ -5,6 +5,33 @@
   <title>환자 홈</title>
   <link rel="stylesheet" th:href="@{/css/common.css}" />
   <link rel="stylesheet" th:href="@{/css/patient.css}" />
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.17/main.min.css" rel="stylesheet">
+  <script src="
+    https://cdn.jsdelivr.net/npm/fullcalendar@6.1.17/index.global.min.js
+  "></script>
+  <style>
+    #calendar .fc-daygrid-event-dot {
+      display: none !important;
+    }
+    #calendar .fc-daygrid-event {
+      background: #fffacd !important;
+      border: none !important;
+      color: #222 !important;
+      font-weight: bold;
+      border-radius: 8px !important;
+      box-shadow: 0 0 4px #fffacd80;
+      padding: 1px 6px;
+      margin: 1px 0;
+      min-width: 40px;
+      display: inline-block;
+    }
+    #calendar .fc-event-title {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-size: 0.6em;
+    }
+  </style>
 </head>
 <body>
 <!-- Header -->
@@ -70,22 +97,29 @@
     </table>
   </section>
 
-  <!-- 예약 내역 -->
-  <section class="appointments-section" id="appointmentsSection">
-    <h3>예약 내역</h3>
-    <table>
-      <thead><tr><th>날짜</th><th>시간</th><th>상태</th><th>메모</th></tr></thead>
-      <tbody>
-      <tr th:each="a : ${appointments}"
-          th:attr="data-date=${a.appointment_date},data-time=${a.appointment_time}">
-        <td th:text="${a.appointment_date}"></td>
-        <td th:text="${a.appointment_time}"></td>
-        <td th:text="${a.status}"></td>
-        <td th:text="${a.remarks}"></td>
-      </tr>
-      </tbody>
-    </table>
-  </section>
+  <div style="display: flex; gap: 24px; align-items: flex-start;">
+    <!-- 예약 내역 -->
+    <section class="appointments-section" id="appointmentsSection" style="flex: 0 0 350px; min-width: 0;">
+      <h3>예약 내역</h3>
+      <table>
+        <thead><tr><th>날짜</th><th>시간</th><th>상태</th><th>메모</th></tr></thead>
+        <tbody>
+        <tr th:each="a : ${appointments}"
+            th:attr="data-date=${a.appointment_date},data-time=${a.appointment_time}">
+          <td th:text="${a.appointment_date}"></td>
+          <td th:text="${a.appointment_time}"></td>
+          <td th:text="${a.status}"></td>
+          <td th:text="${a.remarks}"></td>
+        </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 예약 캘린더 추가 -->
+    <section class="calendar-section" style="flex: 1 1 0;">
+      <div id="calendar"></div>
+    </section>
+  </div>
 
 </main>
 
@@ -380,5 +414,23 @@
               });
     });
   </script>
+<script th:inline="javascript">
+  /*<![CDATA[*/
+  document.addEventListener('DOMContentLoaded', function() {
+    var calendarEl = document.getElementById('calendar');
+    if (!calendarEl) return; // calendar div 없는 경우 방지
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+      initialView: 'dayGridMonth',
+      locale: 'ko',
+      events: '/appointment/calendar?patientId=' + patientId,
+      height: 'auto',
+      displayEventTime: false
+    });
+    calendar.render();
+  });
+  /*]]>*/
+</script>
+
 </body>
+
 </html>
