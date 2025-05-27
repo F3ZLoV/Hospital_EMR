@@ -104,31 +104,121 @@ tr:nth-child(even) {
 .modal {
     display: none;
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+    left: 0; top: 0; right: 0; bottom: 0;
+    background: rgba(34, 34, 34, 0.30);
     justify-content: center;
     align-items: center;
-    z-index: 1000;
+    overflow-y: auto;
+    animation: modal-fadein 0.2s;
+}
+@keyframes modal-fadein {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 .modal-content {
     background: #fff;
-    padding: 1.5rem;
-    border-radius: 8px;
-    max-width: 480px;
-    width: 90%;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    border-radius: 14px;
+    padding: 36px 38px 30px 38px;
+    box-shadow: 0 8px 24px rgba(20,24,36,0.16), 0 1.5px 4px #b7bdc7;
+    min-width: 350px; max-width: 440px;
+    width: 95vw;
     position: relative;
+    font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    transition: box-shadow 0.1s;
 }
-.modal-content .close {
+.modal-content h3 {
+    font-size: 1.23rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin-top: 0;
+    margin-bottom: 22px;
+    color: #222e4c;
+    border-bottom: 1.5px solid #e9eaf3;
+    padding-bottom: 10px;
+}
+
+.close {
     position: absolute;
-    top: 0.5rem;
-    right: 0.75rem;
-    font-size: 1.5rem;
+    top: 16px; right: 18px;
+    font-size: 1.6rem;
+    color: #bbb;
     cursor: pointer;
+    font-weight: bold;
+    transition: color 0.13s;
 }
+.close:hover { color: #222; }
+
+.survey-form label {
+    font-weight: 600;
+    color: #2a334e;
+    margin-bottom: 7px;
+    display: block;
+    margin-top: 16px;
+}
+.survey-form input[type="text"],
+.survey-form textarea {
+    width: 100%;
+    border: 1px solid #d4dae2;
+    border-radius: 6px;
+    padding: 7px 11px;
+    font-size: 1.02rem;
+    margin-top: 6px;
+    margin-bottom: 6px;
+    background: #fafbfc;
+    transition: border 0.16s;
+}
+.survey-form input[type="text"]:focus,
+.survey-form textarea:focus {
+    border: 1.5px solid #3a6ff7;
+    outline: none;
+    background: #fff;
+}
+.survey-form input[type="radio"],
+.survey-form input[type="checkbox"] {
+    accent-color: #206be6;
+    margin-right: 3px;
+    vertical-align: middle;
+    transform: scale(1.1);
+}
+.survey-form .symptom-options {
+    margin-bottom: 2px;
+}
+.survey-form .symptom-options label {
+    display: inline-block;
+    margin-right: 14px;
+    margin-bottom: 5px;
+    font-weight: 500;
+}
+.survey-form .symptom-etc-row {
+    display: flex; align-items: center;
+    margin-top: 4px;
+    margin-bottom: 6px;
+}
+.survey-form .symptom-etc-row textarea {
+    margin-left: 7px;
+    width: 140px;
+    resize: none;
+    font-size: 0.98rem;
+}
+.survey-form .survey-btn {
+    margin-top: 22px;
+    width: 100%;
+    background: linear-gradient(90deg, #2460e6 0%, #4888ea 100%);
+    color: #fff; border: none; border-radius: 6px;
+    padding: 13px 0; font-size: 1.11rem; font-weight: 700;
+    letter-spacing: 1.5px; cursor: pointer;
+    box-shadow: 0 2px 12px 0 rgba(36,100,230,0.13);
+    transition: background 0.16s;
+}
+.survey-form .survey-btn:hover {
+    background: linear-gradient(90deg, #3056cb 0%, #427ed0 100%);
+}
+.survey-form .success-msg {
+    margin-top: 10px; color: #00b363;
+    font-weight: 600; font-size: 1.05rem; text-align: center;
+}
+
 
 /* Alert Time Inputs */
 .alert-time-inputs {

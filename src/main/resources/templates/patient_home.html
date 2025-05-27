@@ -58,6 +58,7 @@
     <div class="quick-actions">
       <button class="btn" onclick="openNewAppointmentModal()">예약 등록하기</button>
       <button class="btn" onclick="openNotificationSettingsModal()">알림 설정</button>
+      <button class="btn" onclick="openSurveyModal()">문진표 작성</button>
     </div>
   </div>
 
@@ -202,6 +203,20 @@
     <h3>예약 시간</h3>
     <p id="alertText"></p>
     <button class="btn" onclick="closeAlertModal()">확인</button>
+  </div>
+</div>
+
+<!-- 문진표 작성 모달 -->
+<div id="surveyModal" class="modal" style="display:none;">
+  <div class="modal-content" style="max-width:500px;">
+    <span class="close" onclick="closeSurveyModal()">&times;</span>
+    <h3>문진표 작성</h3>
+    <form id="surveyForm" class="survey-form">
+      <input type="hidden" name="patientId" th:value="${patient.id}">
+      <div id="surveyQuestionArea"></div>
+      <button type="submit" class="survey-btn">제출</button>
+      <div id="surveyMsg" style="color:green; display:none;">제출 완료!</div>
+    </form>
   </div>
 </div>
 
@@ -430,7 +445,153 @@
   });
   /*]]>*/
 </script>
+<script>
+  function openSurveyModal() {
+    document.getElementById('surveyModal').style.display = 'flex';
+    fetch('/survey/questions')
+            .then(res => res.json())
+            .then(list => {
+              let html = '';
+              let symptomQuestion = list.find(q => q.questionType === 'CHOICE' && q.questionText.includes('현재 증상'));
+              let medOXQuestion   = list.find(q => q.questionType === 'OX' && q.questionText === '최근 복용 약이 있나요?');
+              let medTextQuestion = list.find(q => q.questionType === 'TEXT' && q.questionText === '복용 중인 약을 입력하세요.');
 
+              for (const q of list) {
+                // ---- 증상 체크박스(CHOICE): 옵션은 가로, 기타는 줄바꿈 아래에 따로 ----
+                if (symptomQuestion && q.id === symptomQuestion.id) {
+                  html += `<label>${q.questionText}</label><br>`;
+                  let options = q.choiceOptions ? q.choiceOptions.split(',').map(opt => opt.trim()) : [];
+                  // "기타" 빼고 한줄
+                  html += `<div style="margin-bottom:4px;">`;
+                  for (const opt of options) {
+                    if (opt !== '기타') {
+                      html += `<label style="margin-right:8px;"><input type="checkbox" name="answer_${q.id}" value="${opt}"> ${opt}</label>`;
+                    }
+                  }
+                  html += `</div>`;
+                  // "기타"만 아래 한줄(줄바꿈)
+                  if (options.includes('기타')) {
+                    html += `
+                            <div style="margin-bottom:10px;">
+                                <label>
+                                    <input type="checkbox" id="etcSymptom" name="answer_${q.id}" value="기타" onclick="toggleEtcSymptom(this)">
+                                    기타
+                                </label>
+                                <span id="etcSymptomDiv" style="display:none; margin-left:4px;">
+                                    <textarea name="symptom_etc" rows="1" style="vertical-align:middle; width:120px;" placeholder="기타 증상"></textarea>
+                                </span>
+                            </div>
+                        `;
+                  }
+                  html += '<br>';
+                }
+                // ---- 최근 복용 약이 있나요? (OX) ----
+                else if (medOXQuestion && q.id === medOXQuestion.id) {
+                  html += `<label>${q.questionText}</label><br>`;
+                  html += `
+                        <input type="radio" name="answer_${q.id}" value="O" onclick="showMedInput(true)"> O
+                        <input type="radio" name="answer_${q.id}" value="X" onclick="showMedInput(false)" checked> X
+                        <br><br>
+                        <div id="medInputDiv" style="display:none; margin-bottom:8px;"></div>
+                    `;
+                }
+                // ---- 복용 중인 약을 입력하세요. (TEXT)는 **여기서 렌더링하지 않음** ----
+                else if (medTextQuestion && q.id === medTextQuestion.id) {
+                  // 아예 아무것도 출력하지 않음! (JS에서 동적으로 삽입)
+                }
+                // ---- 기본 ----
+                else {
+                  html += `<label>${q.questionText}</label><br>`;
+                  if (q.questionType === 'CHOICE') {
+                    const options = q.choiceOptions ? q.choiceOptions.split(',').map(opt=>opt.trim()) : [];
+                    for(const opt of options) {
+                      html += `<input type="radio" name="answer_${q.id}" value="${opt}"> ${opt} `;
+                    }
+                  }
+                  else if(q.questionType === 'OX') {
+                    html += `<input type="radio" name="answer_${q.id}" value="O"> O `;
+                    html += `<input type="radio" name="answer_${q.id}" value="X"> X `;
+                  }
+                  else if(q.questionType === 'TEXT') {
+                    html += `<input type="text" name="answer_${q.id}" />`;
+                  }
+                  html += '<br><br>';
+                }
+              }
+              document.getElementById('surveyQuestionArea').innerHTML = html;
+            });
+  }
+
+  // 기타 체크박스 입력창 토글
+  function toggleEtcSymptom(cb) {
+    document.getElementById('etcSymptomDiv').style.display = cb.checked ? 'inline-block' : 'none';
+  }
+
+  // 복용약 O 선택시만 입력란 동적 생성
+  function showMedInput(show) {
+    // medTextQuestion의 id는 서버에서 질문 불러올 때 항상 "복용 중인 약을 입력하세요."의 question.id임
+    fetch('/survey/questions')
+            .then(res => res.json())
+            .then(list => {
+              let medText = list.find(q => q.questionType === 'TEXT' && q.questionText === '복용 중인 약을 입력하세요.');
+              const medInputDiv = document.getElementById('medInputDiv');
+              if (!medInputDiv) return;
+              if (show && medText) {
+                medInputDiv.innerHTML = `<input type="text" name="answer_${medText.id}" placeholder="복용 중인 약을 입력하세요.">`;
+                medInputDiv.style.display = 'block';
+              } else {
+                medInputDiv.innerHTML = '';
+                medInputDiv.style.display = 'none';
+              }
+            });
+  }
+
+  function closeSurveyModal() {
+    document.getElementById('surveyModal').style.display = 'none';
+  }
+
+  document.getElementById('surveyForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const form = e.target;
+    const formData = new FormData();
+
+    // 각 질문별로 처리
+    const questionDiv = document.getElementById('surveyQuestionArea');
+    // 모든 name="answer_x"인 것들을 질문별로 그룹화
+    const answerInputs = questionDiv.querySelectorAll('[name^="answer_"]');
+    const grouped = {};
+    answerInputs.forEach(input => {
+      const name = input.name;
+      if (!grouped[name]) grouped[name] = [];
+      if ((input.type === 'checkbox' && input.checked) || input.type === 'radio' && input.checked || input.type === 'text' || input.tagName === 'TEXTAREA') {
+        grouped[name].push(input.value);
+      }
+    });
+
+    for (const key in grouped) {
+      if (grouped[key].length > 1) {
+        formData.append(key, grouped[key].join(', '));
+      } else {
+        formData.append(key, grouped[key][0]);
+      }
+    }
+
+    // patientId 추가
+    formData.append('patientId', form.patientId.value);
+
+    fetch('/survey/submit', {
+      method: 'POST',
+      body: formData
+    })
+            .then(res=>res.json())
+            .then(data=>{
+              if(data.success){
+                document.getElementById('surveyMsg').style.display = 'block';
+                setTimeout(closeSurveyModal, 1000);
+              }
+            });
+  });
+</script>
 </body>
 
 </html>

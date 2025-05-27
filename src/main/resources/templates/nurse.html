@@ -73,10 +73,24 @@
 
     <!-- 중앙 메인 콘텐츠 -->
     <div class="main-content">
-        <button id="openModalBtn" class="new-patient-btn">신규 환자 등록</button>
-        <button id="openAppointmentListModalBtn" class="new-patient-btn">진료 예약 목록</button>
-        <button id="openPrescriptionModalBtn" class="new-patient-btn">처방전 출력</button>
-        <button id="openStatsModalBtn">통계 보기</button>
+        <div class="feature-btn-grid">
+            <button class="new-patient-btn" id="openModalBtn">
+                <span class="icon">📝</span>
+                <span>신규 환자 등록</span>
+            </button>
+            <button class="new-patient-btn" id="openAppointmentListModalBtn">
+                <span class="icon">📅</span>
+                <span>진료 예약 목록</span>
+            </button>
+            <button class="new-patient-btn" id="openPrescriptionModalBtn">
+                <span class="icon">💊</span>
+                <span>처방전 출력</span>
+            </button>
+            <button id="openStatsModalBtn">
+                <span class="icon">📊</span>
+                <span>통계 보기</span>
+            </button>
+        </div>
     </div>
 
     <!-- 우측 배너: 캘린더 영역 -->

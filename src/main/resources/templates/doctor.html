@@ -69,6 +69,11 @@
                         <textarea id="clinicalMemo" placeholder="환자 관련 메모를 작성하세요."></textarea>
                     </div>
                 </div>
+                <div style="margin-top: 8px;">
+                    <button type="button" class="btn" id="latestSurveyBtn">
+                        최신 문진표 보기
+                    </button>
+                </div>
             </div>
             <div class="column right-column">
                 <div class="record-card">
@@ -315,6 +320,15 @@
                 </form>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- 최신 문진표 모달 -->
+<div id="latestSurveyModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeLatestSurveyModal()">&times;</span>
+        <h3>최신 문진표</h3>
+        <div id="surveyContent"></div>
     </div>
 </div>
 
@@ -1744,6 +1758,38 @@
         loadCurrentConsultationPatient();
         setInterval(pollCurrentPatient, 5000);
     });
+</script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        document.getElementById('latestSurveyBtn').onclick = function() {
+            if (!currentPatientId) {
+                alert('환자 정보가 없습니다.');
+                return;
+            }
+            showLatestSurvey(currentPatientId);
+        };
+    });
+    function showLatestSurvey(patientId) {
+        fetch('/survey/latest?patientId=' + patientId)
+            .then(res => res.json())
+            .then(list => {
+                let html = '';
+                if(!list || list.length===0) {
+                    html = '문진표가 없습니다.';
+                } else {
+                    html = '<table style="width:100%"><tr><th>질문</th><th>답변</th></tr>';
+                    for(const item of list) {
+                        html += `<tr><td>${item.question}</td><td>${item.answer}</td></tr>`;
+                    }
+                    html += '</table>';
+                }
+                document.getElementById('surveyContent').innerHTML = html;
+                document.getElementById('latestSurveyModal').style.display = 'flex';
+            });
+    }
+    function closeLatestSurveyModal() {
+        document.getElementById('latestSurveyModal').style.display = 'none';
+    }
 </script>
 </body>
 </html>

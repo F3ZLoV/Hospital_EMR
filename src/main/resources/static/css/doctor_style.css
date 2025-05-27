@@ -882,3 +882,29 @@ td:nth-child(7) button.day-btn { color: blue; }   /* 토요일 */
     font-weight: bold;
     border-left: 4px solid #007acc;
 }
+
+.latest-survey-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 8px;
+    font-size: 1.04rem;
+}
+.latest-survey-table th, .latest-survey-table td {
+    padding: 8px 7px;
+    border-bottom: 1px solid #e3e6ed;
+    text-align: left;
+}
+.latest-survey-table th {
+    background: #f4f8ff;
+    font-weight: 700;
+    color: #1d2d55;
+}
+.latest-survey-table tr:last-child td { border-bottom: none; }
+
+@media (max-width: 640px) {
+    .modal-content {
+        padding: 16px 6vw 20px 6vw;
+        min-width: unset;
+        max-width: 95vw;
+    }
+}

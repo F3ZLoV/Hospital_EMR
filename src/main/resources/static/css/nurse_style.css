@@ -537,3 +537,54 @@ body {
     margin-top: 2px;
     color: green;
 }
+
+/* 버튼 그리드 컨테이너 */
+.feature-btn-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr); /* 한 줄에 4개 */
+    gap: 22px 28px; /* 행, 열 간격 */
+    margin-top: 40px;
+    justify-items: center;
+}
+
+/* 공통 버튼 스타일 */
+.feature-btn-grid button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 138px;
+    height: 92px;
+    border: 2px solid #b6d2ed;
+    border-radius: 15px;
+    background: #fff;
+    font-size: 1.07rem;
+    color: #2069b3;
+    font-weight: 500;
+    box-shadow: 0 2px 8px #f3f7fa;
+    cursor: pointer;
+    transition: all 0.18s;
+    gap: 10px;
+    outline: none;
+}
+
+/* 아이콘 폰트 크기 */
+.feature-btn-grid .icon {
+    font-size: 2.2rem;
+    margin-bottom: 3px;
+}
+
+/* 호버 및 선택 효과 */
+.feature-btn-grid button:hover,
+.feature-btn-grid button:focus,
+.feature-btn-grid button.selected {
+    background: #e6f2fc;
+    border-color: #4094e7;
+    color: #124d84;
+    box-shadow: 0 4px 14px #c7e0fa;
+}
+
+.feature-btn-grid button:active {
+    background: #d4e6f9;
+    border-color: #2a7fca;
+}
