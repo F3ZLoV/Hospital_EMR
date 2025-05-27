@@ -4,6 +4,7 @@ import com.example.hospitalemr.domain.Appointment;
 import com.example.hospitalemr.domain.Patient;
 import com.example.hospitalemr.repository.AppointmentRepository;
 import com.example.hospitalemr.repository.PatientRepository;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -11,6 +12,7 @@ import java.sql.Date;
 import java.sql.Time;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +29,7 @@ public class AppointmentController {
         this.appointmentRepository = appointmentRepository;
         this.patientRepository = patientRepository;
     }
+
 
     // 예약 등록 (등록 시 상태는 무조건 "예약"으로 처리)
     @PostMapping
@@ -129,6 +132,34 @@ public class AppointmentController {
         } catch (Exception e) {
             result.put("success", false);
             result.put("message", "예약 상태 업데이트에 실패하였습니다.");
+        }
+        return result;
+    }
+
+    @PostMapping("/{id}/change")
+    @ResponseBody
+    public Map<String, Object> changeAppointment(
+            @PathVariable("id") int appointmentId,
+            @RequestParam("newDateTime") String newDateTime
+    ) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            // JpaRepository 기본 제공 getById 사용
+            Appointment appt = appointmentRepository.getById(appointmentId);
+            LocalDateTime dt = LocalDateTime.parse(newDateTime);
+            appt.setAppointment_date(dt.toLocalDate());
+            appt.setAppointment_time(dt.toLocalTime());
+            appt.setStatus("변경됨");
+            appointmentRepository.save(appt);
+
+            result.put("success", true);
+            result.put("message", "예약이 변경되었습니다.");
+        } catch (EntityNotFoundException enf) {
+            result.put("success", false);
+            result.put("message", "예약을 찾을 수 없습니다. id=" + appointmentId);
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("message", "예약 변경에 실패했습니다: " + e.getMessage());
         }
         return result;
     }

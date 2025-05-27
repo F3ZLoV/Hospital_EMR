@@ -206,6 +206,17 @@
   </div>
 </div>
 
+<!-- 예약 변경 모달 -->
+<div id="changeModal" class="modal" style="display:none; align-items:center; justify-content:center;">
+  <div class="modal-content">
+    <span class="close" onclick="closeChangeModal()">&times;</span>
+    <h3>예약 변경</h3>
+    <input type="datetime-local" id="changeDateTime" />
+    <button class="btn" onclick="submitChangeAppointment()">변경</button>
+    <button class="btn" onclick="">삭제</button>
+  </div>
+</div>
+
 <!-- 문진표 작성 모달 -->
 <div id="surveyModal" class="modal" style="display:none;">
   <div class="modal-content" style="max-width:500px;">
@@ -439,11 +450,86 @@
       locale: 'ko',
       events: '/appointment/calendar?patientId=' + patientId,
       height: 'auto',
-      displayEventTime: false
+      displayEventTime: false,
+      eventClick: function(info) {
+        openChangeModal(info.event.id, info.event.start);
+      }
     });
     calendar.render();
   });
   /*]]>*/
+</script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const calendarEl = document.getElementById('appointmentCalendar');
+    window.calendar = new FullCalendar.Calendar(calendarEl, {
+      initialView: 'dayGridMonth',
+      locale: 'ko',
+      // 기존 URL 소스 대신 함수형 이벤트 로드로 id와 start 명시
+      events: function(fetchInfo, successCallback, failureCallback) {
+        fetch('/appointment/calendar?patientId=' + patientId)
+                .then(res => res.json())
+                .then(data => {
+                  const events = data.map(a => ({
+                    id: String(a.id),
+                    title: a.status || '예약',
+                    start: a.appointment_date + 'T' + a.appointment_time
+                  }));
+                  successCallback(events);
+                })
+                .catch(err => {
+                  console.error('Event load failed:', err);
+                  failureCallback(err);
+                });
+      },
+      eventClick: function(info) {
+        openChangeModal(info.event.id, info.event.start);
+      }
+    });
+    calendar.render();
+
+    window.addEventListener('click', function(e) {
+      if (e.target.id === 'changeModal') closeChangeModal();
+    });
+  });
+
+  let selectedAppointmentId;
+
+  function openChangeModal(id, date) {
+    selectedAppointmentId = id;
+    const dateInput = document.getElementById('changeDateTime');
+    dateInput.value = date.toISOString().slice(0,16);
+    document.getElementById('changeModal').style.display = 'flex';
+  }
+
+  function closeChangeModal() {
+    document.getElementById('changeModal').style.display = 'none';
+  }
+
+  function submitChangeAppointment() {
+    const dateInput = document.getElementById('changeDateTime');
+    const newDateTime = dateInput.value;
+    if (!newDateTime) {
+      alert('변경할 시간을 선택해주세요.');
+      return;
+    }
+    // 선택된 ID가 문자열일 수 있으니 그대로 전달
+    fetch(`/appointment/${selectedAppointmentId}/change?newDateTime=${encodeURIComponent(newDateTime)}`, {
+      method: 'POST'
+    })
+            .then(res => res.json())
+            .then(data => {
+              alert(data.message);
+              if (data.success) {
+                closeChangeModal();
+                window.calendar.refetchEvents();
+              }
+            })
+            .catch(err => {
+              console.error(err);
+              alert('예약 변경에 실패했습니다.');
+            });
+  }
 </script>
 <script>
   function openSurveyModal() {

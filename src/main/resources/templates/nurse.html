@@ -5,6 +5,7 @@
     <title>이비인후과 EMR - 간호사 메인화면</title>
     <link rel="stylesheet" th:href="@{/css/nurse_style.css}" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-matrix@1.1"></script>
     <style>
         /* 모달 기본 스타일 */
         .modal {
@@ -362,6 +363,10 @@
         <!-- 연령대별 환자 분포 -->
         <h3>연령대별 환자 분포</h3>
         <canvas id="ageDistributionChart"></canvas>
+
+        <!-- 시간대별 내원 건수 -->
+        <h3>시간대별 내원 건수</h3>
+        <canvas id="visitHeatmapChart" width="600" height="300"></canvas>
     </div>
 </div>
 
@@ -1445,6 +1450,40 @@
                 }]
             },
             options: { responsive: true }
+        });
+
+        // 히트맵 렌더링
+        const raw = data.heatmap;
+        const maxCnt = Math.max(...raw.map(d => d.count));
+        const matrixData = raw.map(d => ({ x: d.hour, y: d.weekday, v: d.count }));
+
+        const ctx = document.getElementById('visitHeatmapChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'matrix',
+            data: { datasets: [{
+                    label: '내원 건수',
+                    data: matrixData,
+                    backgroundColor: ctx => {
+                        const v = ctx.dataset.data[ctx.dataIndex].v;
+                        return Chart.helpers.color('blue').alpha(v / (maxCnt||1)).rgbString();
+                    },
+                    width: ({ chart }) => (chart.chartArea.width - chart.scales.x.width) / 24 - 1,
+                    height: ({ chart }) => (chart.chartArea.height - chart.scales.y.height) / 7 - 1
+                }]},
+            options: {
+                maintainAspectRatio: false,
+                scales: {
+                    x: { type: 'linear', position: 'top', ticks: { stepSize: 1, callback: v => v + ':00' } },
+                    y: { type: 'category', labels: ['일','월','화','수','목','금','토'] }
+                },
+                plugins: { tooltip: { callbacks: {
+                            title: ctxs => {
+                                const d = ctxs[0].raw;
+                                return `요일 ${['일','월','화','수','목','금','토'][d.y]} ${d.x}:00`;
+                            },
+                            label: ctx => `건수: ${ctx.raw.v}`
+                        }}}
+            }
         });
     }
 </script>

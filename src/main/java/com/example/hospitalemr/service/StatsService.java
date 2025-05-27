@@ -71,4 +71,21 @@ public class StatsService {
                 })
                 .collect(Collectors.toList());
     }
+
+    // 주간 방문 히트맵 데이터
+    public List<Map<String, Object>> getHourlyVisitHeatmap(LocalDate start, LocalDate end) {
+        List<Map<String, Object>> list = new ArrayList<>();
+        for (Object[] r : visitRepo.findHourlyVisitCountsBetween(start, end)) {
+            Map<String, Object> m = new HashMap<>();
+            // DAYOFWEEK: 1=Sunday -> 0=Sunday 인덱스로
+            int weekday = ((Number) r[0]).intValue() - 1;
+            int hour = ((Number) r[1]).intValue();
+            long count = ((Number) r[2]).longValue();
+            m.put("weekday", weekday);
+            m.put("hour", hour);
+            m.put("count", count);
+            list.add(m);
+        }
+        return list;
+    }
 }

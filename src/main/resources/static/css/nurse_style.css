@@ -588,3 +588,54 @@ body {
     background: #d4e6f9;
     border-color: #2a7fca;
 }
+
+.card-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.patient-card {
+    background: #f9f9ff;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px #0001;
+    padding: 14px 12px;
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow 0.15s;
+}
+.patient-main {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 1.1rem;
+    align-items: center;
+    margin-bottom: 8px;
+}
+.patient-actions {
+    display: flex;
+    gap: 6px;
+}
+.patient-actions button {
+    border: none;
+    border-radius: 6px;
+    padding: 5px 12px;
+    background: #e5e8ff;
+    font-size: 1rem;
+    cursor: pointer;
+}
+.patient-actions .delete-btn {
+    background: #ffe5e5;
+    color: #e11;
+}
+.patient-actions .view-btn {
+    background: #e5fff5;
+}
+.patient-actions .call-btn {
+    background: #ddeeff;
+}
+.patient-actions .register-btn {
+    background: #e5f0ff;
+}
+.patient-card:hover {
+    box-shadow: 0 4px 16px #0002;
+}
