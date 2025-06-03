@@ -6,7 +6,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -24,9 +27,10 @@ public class NurseDashboardController {
         result.put("topDrugs",   statsService.getTopPrescribedDrugs());
         result.put("ageGroups",  statsService.getAgeGroupDistribution());
         // 지난 7일 기간으로 기본 조회
-        LocalDate end = LocalDate.now();
-        LocalDate start = end.minusDays(6);
-        result.put("heatmap",    statsService.getHourlyVisitHeatmap(start, end));
+        LocalDateTime end = LocalDateTime.now();
+        LocalDateTime start = end.minusDays(6);
+        result.put("heatmap", statsService.getHourlyVisitHeatmap(start, end));
+        result.put("hourlyFocus", statsService.getVisitHourlyConcentration());
         return result;
     }
 }

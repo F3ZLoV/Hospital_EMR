@@ -6,6 +6,7 @@ import com.example.hospitalemr.repository.PrescriptionRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -73,19 +74,35 @@ public class StatsService {
     }
 
     // 주간 방문 히트맵 데이터
-    public List<Map<String, Object>> getHourlyVisitHeatmap(LocalDate start, LocalDate end) {
+    public List<Map<String, Object>> getHourlyVisitHeatmap(LocalDateTime start, LocalDateTime end) {
         List<Map<String, Object>> list = new ArrayList<>();
-        for (Object[] r : visitRepo.findHourlyVisitCountsBetween(start, end)) {
+        LocalDate startDate = start.toLocalDate();
+        LocalDate endDate = end.toLocalDate();
+        for (Object[] r : visitRepo.findHourlyVisitCountsBetween(startDate, endDate)) {
             Map<String, Object> m = new HashMap<>();
-            // DAYOFWEEK: 1=Sunday -> 0=Sunday 인덱스로
+
             int weekday = ((Number) r[0]).intValue() - 1;
             int hour = ((Number) r[1]).intValue();
             long count = ((Number) r[2]).longValue();
+
             m.put("weekday", weekday);
             m.put("hour", hour);
             m.put("count", count);
+
             list.add(m);
         }
         return list;
+    }
+
+    // 시간대별 진료 집중도 바 차트
+    public List<Map<String, Object>> getVisitHourlyConcentration() {
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (Object[] row : visitRepo.countVisitsByHour()) {
+            Map<String, Object> map = new HashMap<>();
+            map.put("hour", row[0]);
+            map.put("count", row[1]);
+            result.add(map);
+        }
+        return result;
     }
 }

@@ -224,29 +224,12 @@ input, textarea, select {
     font-size: 0.8rem;
 }
 
-/* 리스트 컨테이너: 높이 제한하여 스크롤 가능 (예: 5개 항목 분량) */
+/* 리스트 컨테이너: 높이 제한하여 스크롤 가능 */
 .list-container {
-    max-height: 200px; /* 높이 조절: 대략 5개 항목 정도 보이도록 */
+    max-height: 600px;
     overflow-y: auto;
     border: 1px solid #ccc;
     border-radius: 4px;
-}
-
-/* 환자 리스트 스타일 */
-#patientList {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-#patientList li {
-    padding: 10px;
-    border-bottom: 1px solid #eee;
-    cursor: pointer;
-}
-
-#patientList li:hover {
-    background-color: #f9f9f9;
 }
 
 /* 캘린더 배너 전체 영역 */
@@ -907,4 +890,19 @@ td:nth-child(7) button.day-btn { color: blue; }   /* 토요일 */
         min-width: unset;
         max-width: 95vw;
     }
+}
+
+#doctorPatientList {
+    padding: 0;
+    margin: 0;
+}
+
+#doctorPatientList li {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+}
+
+#doctorPatientList li:hover {
+    background-color: #f9f9f9;
 }

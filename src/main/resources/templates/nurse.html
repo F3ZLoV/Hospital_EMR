@@ -352,21 +352,17 @@
         <span id="closeStatsModal" style="float:right; cursor:pointer;">&times;</span>
         <h2>현황 통계</h2>
 
-        <!-- 진료 건수 추이 -->
         <h3>진료 수 추세</h3>
         <canvas id="visitTrendChart"></canvas>
 
-        <!-- 처방 약 top 5 -->
-        <h3>처방 약 Top 5</h3>
-        <canvas id="topDrugsChart"></canvas>
-
-        <!-- 연령대별 환자 분포 -->
         <h3>연령대별 환자 분포</h3>
         <canvas id="ageDistributionChart"></canvas>
 
-        <!-- 시간대별 내원 건수 -->
-        <h3>시간대별 내원 건수</h3>
-        <canvas id="visitHeatmapChart" width="600" height="300"></canvas>
+        <h3>시간대별 내원 건수(히트맵)</h3>
+        <canvas id="visitHeatmapChart"></canvas>
+
+        <h3>시간대별 내원 건수(바차트)</h3>
+        <canvas id="visitFocusChart"></canvas>
     </div>
 </div>
 
@@ -1341,18 +1337,6 @@
             });
     }
 
-    // 예시: 대기 환자 리스트를 새로고침하는 함수 (별도로 구현)
-    function refreshWaitingList() {
-        fetch('/patient/doctor/waiting')
-            .then(response => response.text())
-            .then(html => {
-                document.getElementById("doctorPatientList").innerHTML = html;
-            })
-            .catch(function(error) {
-                console.error("대기 리스트 갱신 오류:", error);
-            });
-    }
-
 </script>
 <script>
     const prescModal = document.getElementById('prescriptionModal');
@@ -1423,21 +1407,6 @@
             }
         });
 
-        // 약 top 5
-        const tdctx = document.getElementById("topDrugsChart").getContext("2d");
-        new Chart(tdctx, {
-            type: 'bar',
-            data: {
-                labels: data.topDrugs.map(d => d.name),
-                datasets: [{
-                    label: '처방 수',
-                    data: data.topDrugs.map(d => d.count),
-                    borderWidth: 1
-                }]
-            },
-            options: { responsive: true }
-        });
-
         // 연령대별 분포
         const ac = document.getElementById("ageDistributionChart").getContext("2d");
         new Chart(ac, {
@@ -1452,37 +1421,110 @@
             options: { responsive: true }
         });
 
-        // 히트맵 렌더링
+        // 시간대별 내원 건수
         const raw = data.heatmap;
         const maxCnt = Math.max(...raw.map(d => d.count));
         const matrixData = raw.map(d => ({ x: d.hour, y: d.weekday, v: d.count }));
-
-        const ctx = document.getElementById('visitHeatmapChart').getContext('2d');
-        new Chart(ctx, {
-            type: 'matrix',
-            data: { datasets: [{
-                    label: '내원 건수',
-                    data: matrixData,
-                    backgroundColor: ctx => {
-                        const v = ctx.dataset.data[ctx.dataIndex].v;
-                        return Chart.helpers.color('blue').alpha(v / (maxCnt||1)).rgbString();
-                    },
-                    width: ({ chart }) => (chart.chartArea.width - chart.scales.x.width) / 24 - 1,
-                    height: ({ chart }) => (chart.chartArea.height - chart.scales.y.height) / 7 - 1
-                }]},
-            options: {
-                maintainAspectRatio: false,
-                scales: {
-                    x: { type: 'linear', position: 'top', ticks: { stepSize: 1, callback: v => v + ':00' } },
-                    y: { type: 'category', labels: ['일','월','화','수','목','금','토'] }
+        setTimeout(() => {
+            const ctx = document.getElementById('visitHeatmapChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'matrix',
+                data: {
+                    datasets: [{
+                        label: '내원 건수',
+                        data: matrixData,
+                        backgroundColor: ctx => {
+                            const v = ctx.dataset.data[ctx.dataIndex].v;
+                            return Chart.helpers.color('blue').alpha(v / (maxCnt || 1)).rgbString();
+                        },
+                        borderWidth: 1,
+                        borderColor: 'white',
+                        width: ctx => {
+                            const chart = ctx.chart;
+                            const x = chart.scales.x;
+                            const start = x.getPixelForValue(ctx.raw.x - 0.5);
+                            const end = x.getPixelForValue(ctx.raw.x + 0.5);
+                            return end - start;
+                        },
+                        height: ctx => {
+                            const chart = ctx.chart;
+                            const y = chart.scales.y;
+                            const start = y.getPixelForValue(ctx.raw.y - 0.5);
+                            const end = y.getPixelForValue(ctx.raw.y + 0.5);
+                            return (end - start) * 0.6;  // 60% 높이로 줄임
+                        }
+                    }]
                 },
-                plugins: { tooltip: { callbacks: {
-                            title: ctxs => {
-                                const d = ctxs[0].raw;
-                                return `요일 ${['일','월','화','수','목','금','토'][d.y]} ${d.x}:00`;
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            position: 'top',
+                            min: 8,
+                            max: 18,
+                            ticks: {
+                                stepSize: 1,
+                                callback: v => `${v}:00`
                             },
-                            label: ctx => `건수: ${ctx.raw.v}`
-                        }}}
+                            grid: {
+                                offset: false
+                            }
+                        },
+                        y: {
+                            type: 'category',
+                            labels: ['일','월','화','수','목','금','토'],
+                            offset: true,
+                            grid: {
+                                offset: false
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                title: ctxs => {
+                                    const d = ctxs[0].raw;
+                                    return `요일 ${['일','월','화','수','목','금','토'][d.y]} ${d.x}:00`;
+                                },
+                                label: ctx => `건수: ${ctx.raw.v}`
+                            }
+                        },
+                        legend: {
+                            position: 'top'
+                        }
+                    }
+                }
+            });
+
+
+        }, 100);
+        console.log("matrixData: ", matrixData);
+
+        // 시간대별 진료 집중도 바 차트
+        const hfc = document.getElementById("visitFocusChart").getContext("2d");
+        new Chart(hfc, {
+            type: 'bar',
+            data: {
+                labels: data.hourlyFocus.map(d => `${d.hour}:00`),
+                datasets: [{
+                    label: '진료 집중도',
+                    data: data.hourlyFocus.map(d => d.count),
+                    backgroundColor: 'rgba(75, 192, 192, 0.6)'
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1,
+                            callback: value => Number(value).toFixed(0)
+                        }
+                    }
+                }
             }
         });
     }

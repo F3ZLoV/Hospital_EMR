@@ -3,17 +3,183 @@
 <head>
   <meta charset="UTF-8">
   <title>Waiting List Fragment</title>
+  <style>
+    ul {
+      padding: 0;
+      margin: 0;
+      list-style: none;
+    }
+
+    .waiting-item {
+      border: 1px solid #ddd;
+      padding: 10px;
+      margin-bottom: 10px;
+      font-family: sans-serif;
+      border-radius: 6px;
+      background-color: #fff;
+    }
+
+    .top-line {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+
+    .top-line .name {
+      font-size: 16px;
+      font-weight: bold;
+      color: #000;
+    }
+
+    .top-line .time {
+      font-size: 12px;
+      color: #666;
+    }
+
+    .info-line {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 4px;
+    }
+
+    .memo {
+      font-size: 12px;
+      color: #444;
+      line-height: 1.4;
+    }
+
+    .status-btn, .delete-btn {
+      float: right;
+      margin-left: 10px;
+      font-size: 12px;
+      padding: 2px 6px;
+      border-radius: 6px;
+      border: 1px solid #888;
+      background-color: #f0f0f0;
+    }
+
+    .status-btn[disabled] {
+      background-color: #eee;
+      color: #999;
+    }
+
+    .waiting-item {
+      margin-bottom: 10px;
+    }
+
+    .patient-box {
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 10px;
+      background-color: #fff;
+    }
+
+    .patient-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 3px;
+    }
+
+    .patient-name {
+      font-size: 16px;
+      font-weight: bold;
+      color: #000;
+    }
+
+    .patient-time {
+      font-size: 8px;
+      color: #666;
+    }
+
+    .patient-info {
+      font-size: 8px;
+      color: #444;
+      margin-bottom: 4px;
+    }
+
+    .patient-memo {
+      font-size: 12px;
+      color: #333;
+      line-height: 1.4;
+      margin-bottom: 6px;
+    }
+
+    .patient-action {
+      text-align: right;
+    }
+
+    .delete-btn, .called-btn {
+      font-size: 12px;
+      padding: 2px 6px;
+      border-radius: 5px;
+      border: 1px solid #aaa;
+      background-color: #f0f0f0;
+      color: #333;
+    }
+
+    .called-btn[disabled] {
+      background-color: #e0e0e0;
+      color: #999;
+    }
+    .patient-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 3px;
+    }
+
+    .patient-time {
+      font-size: 12px;
+      color: #666;
+      margin-left: auto; /* 오른쪽 정렬 핵심 */
+    }
+
+    .patient-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: #444;
+      margin-bottom: 4px;
+    }
+
+    .info-left {
+      flex: 1;
+    }
+
+    .info-right {
+      display: flex;
+      gap: 6px;
+    }
+
+  </style>
 </head>
 <body>
 <div th:fragment="waitingFragment">
-  <ul>
+  <ul style="padding: 0; margin: 0; list-style: none;">
     <li th:each="patient : ${patients}" class="waiting-item">
-      <span th:text="${patient.name}">환자 이름</span>
-      <!-- 호출(진료중) 상태에 따라 다른 버튼을 표시 -->
-      <button th:if="${!patient.called}" class="delete-btn" th:attr="data-id=${patient.id}">삭제</button>
-      <button th:if="${patient.called}" class="in-consultation-btn" disabled>진료중</button>
+      <div class="patient-header">
+        <span class="patient-name" th:text="${patient.name}">김윤성</span>
+        <br>
+        <span th:text="${patient.date_of_birth}" style="font-size: 12px">1973.06.23</span> |
+        <span th:text="${patient.ageString}" style="font-size: 12px">50세 2개월</span> |
+        <span th:text="${patient.gender}" style="font-size: 12px">남</span>
+      </div>
+      <div class="patient-info">
+        <div class="info-left">
+          <span class="patient-time" th:text="${#temporals.format(patient.receptionTime, 'a h:mm')}" style="font-size: 12px">오후 2:00</span>
+        </div>
+        <div class="info-right">
+          <button th:if="${!patient.called}" class="delete-btn" th:attr="data-id=${patient.id}">삭제</button>
+          <button th:if="${patient.called}" class="called-btn" disabled>진료중</button>
+        </div>
+      </div>
+
     </li>
   </ul>
+
 </div>
 </body>
 </html>

@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.*;
 import java.nio.file.AccessDeniedException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Period;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -122,11 +124,35 @@ public class PatientController {
     // 대기 환자 리스트 (일반)
     @GetMapping("/waiting")
     public String getWaitingPatients(Model model) {
-        List<Patient> waitingPatients = patientRepository.findAll().stream()
+        DateTimeFormatter dobFormatter = DateTimeFormatter.ofPattern("yyyy.MM.dd");
+
+        List<Map<String, Object>> patientViews = patientRepository.findAll().stream()
                 .filter(Patient::isWaiting)
                 .sorted(Comparator.comparing(Patient::getReceptionTime))
+                .map(p -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("name", p.getName());
+                    map.put("date_of_birth", p.getDate_of_birth().format(dobFormatter));
+                    map.put("gender", p.getGender());
+                    map.put("receptionTime", p.getReceptionTime());
+                    map.put("memo", p.getConsultationMemo());
+                    map.put("called", p.isCalled());
+                    map.put("id", p.getId());
+
+                    // 나이 + 개월 계산
+                    LocalDate now = LocalDate.now();
+                    Period period = Period.between(p.getDate_of_birth(), now);
+                    String ageStr = period.getYears() + "세";
+                    if (period.getMonths() > 0) {
+                        ageStr += " " + period.getMonths() + "개월";
+                    }
+                    map.put("ageString", ageStr);
+
+                    return map;
+                })
                 .collect(Collectors.toList());
-        model.addAttribute("patients", waitingPatients);
+
+        model.addAttribute("patients", patientViews);
         return "waiting_list :: waitingFragment";
     }
 
