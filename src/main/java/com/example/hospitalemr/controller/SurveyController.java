@@ -6,6 +6,7 @@ import com.example.hospitalemr.repository.SurveyAnswerRepository;
 import com.example.hospitalemr.repository.SurveyQuestionRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,11 +14,16 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 @Controller
-@RequiredArgsConstructor
 @RequestMapping("/survey")
 public class SurveyController {
     private final SurveyQuestionRepository questionRepo;
     private final SurveyAnswerRepository answerRepo;
+
+    @Autowired
+    public SurveyController(SurveyQuestionRepository questionRepo, SurveyAnswerRepository answerRepo) {
+        this.questionRepo = questionRepo;
+        this.answerRepo = answerRepo;
+    }
 
     @GetMapping("/questions")
     @ResponseBody
