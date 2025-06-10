@@ -1,563 +1,658 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-  <meta charset="UTF-8" />
-  <title>환자 홈</title>
-  <link rel="stylesheet" th:href="@{/css/common.css}" />
-  <link rel="stylesheet" th:href="@{/css/patient.css}" />
-  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.17/main.min.css" rel="stylesheet">
-  <script src="
+    <meta charset="UTF-8"/>
+    <title>환자 홈</title>
+    <link rel="stylesheet" th:href="@{/css/common.css}"/>
+    <link rel="stylesheet" th:href="@{/css/patient.css}"/>
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.17/main.min.css" rel="stylesheet">
+    <script src="
     https://cdn.jsdelivr.net/npm/fullcalendar@6.1.17/index.global.min.js
   "></script>
-  <style>
-    #calendar .fc-daygrid-event-dot {
-      display: none !important;
-    }
-    #calendar .fc-daygrid-event {
-      background: #fffacd !important;
-      border: none !important;
-      color: #222 !important;
-      font-weight: bold;
-      border-radius: 8px !important;
-      box-shadow: 0 0 4px #fffacd80;
-      padding: 1px 6px;
-      margin: 1px 0;
-      min-width: 40px;
-      display: inline-block;
-    }
-    #calendar .fc-event-title {
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      font-size: 0.6em;
-    }
-  </style>
+    <style>
+        #calendar .fc-daygrid-event-dot {
+            display: none !important;
+        }
+
+        #calendar .fc-daygrid-event {
+            background: #fffacd !important;
+            border: none !important;
+            color: #222 !important;
+            font-weight: bold;
+            border-radius: 8px !important;
+            box-shadow: 0 0 4px #fffacd80;
+            padding: 1px 6px;
+            margin: 1px 0;
+            min-width: 40px;
+            display: inline-block;
+        }
+
+        #calendar .fc-event-title {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-size: 0.6em;
+        }
+    </style>
 </head>
 <body>
 <!-- Header -->
 <div th:insert="~{fragments/header :: header}"></div>
 
 <main class="container">
-  <!-- 환영 메시지 -->
-  <section class="welcome-section">
-    <h2 th:text="'안녕하세요, ' + ${patient.name} + '님!'">안녕하세요, 환자님!</h2>
-  </section>
-
-  <!-- 개인정보와 액션 버튼 -->
-  <div class="info-and-actions">
-    <section class="info-section">
-      <h3>개인 정보</h3>
-      <dl>
-        <dt>생년월일</dt><dd th:text="${patient.date_of_birth}"></dd>
-        <dt>성별</dt><dd th:text="${patient.gender}"></dd>
-        <dt>전화번호</dt><dd th:text="${patient.phone_number}"></dd>
-        <dt>이메일</dt><dd th:text="${patient.email}"></dd>
-        <dt>주소</dt><dd th:text="${patient.address}"></dd>
-      </dl>
+    <!-- 환영 메시지 -->
+    <section class="welcome-section">
+        <h2 th:text="'안녕하세요, ' + ${patient.name} + '님!'">안녕하세요, 환자님!</h2>
     </section>
-    <div class="quick-actions">
-      <button class="btn" onclick="openNewAppointmentModal()">예약 등록하기</button>
-      <button class="btn" onclick="openNotificationSettingsModal()">알림 설정</button>
-      <button class="btn" onclick="openSurveyModal()">문진표 작성</button>
+
+    <!-- 개인정보와 액션 버튼 -->
+    <div class="info-and-actions">
+        <section class="info-section">
+            <h3>개인 정보</h3>
+            <dl>
+                <dt>생년월일</dt>
+                <dd th:text="${patient.date_of_birth}"></dd>
+                <dt>성별</dt>
+                <dd th:text="${patient.gender}"></dd>
+                <dt>전화번호</dt>
+                <dd th:text="${patient.phone_number}"></dd>
+                <dt>이메일</dt>
+                <dd th:text="${patient.email}"></dd>
+                <dt>주소</dt>
+                <dd th:text="${patient.address}"></dd>
+            </dl>
+        </section>
+        <div class="quick-actions">
+            <button class="btn" onclick="openNewAppointmentModal()">예약 등록하기</button>
+            <button class="btn" onclick="openNotificationSettingsModal()">알림 설정</button>
+            <button class="btn" onclick="openSurveyModal()">문진표 작성</button>
+            <button class="btn" onclick="openProfileModal()">내 정보 수정</button>
+<!--            <button onclick="openSymptomModal()">자가진단(증상체크)</button>-->
+            <a href="/notice">공지사항</a>
+        </div>
     </div>
-  </div>
 
-  <!-- 진료 내역 -->
-  <section class="visits-section">
-    <h3>진료 내역</h3>
-    <table>
-      <thead>
-      <tr><th>날짜</th><th>시간</th><th>사유</th><th>상세보기</th></tr>
-      </thead>
-      <tbody>
-      <tr th:each="v : ${visits}" th:if="${v.visitId} != ${currentVisitId}">
-        <td th:text="${v.visitDate}"></td>
-        <td th:text="${v.visitTime}"></td>
-        <td th:text="${v.visitReason}"></td>
-        <td>
-          <button class="btn" th:onclick="|showVisitDetail(${v.visitId})|">상세보기</button>
-        </td>
-      </tr>
-      </tbody>
-    </table>
-  </section>
-
-  <!-- 전체 처방 내역 (visit_id 상관없이) -->
-  <section class="prescriptions-section">
-    <h3>전체 처방 내역</h3>
-    <table>
-      <thead><tr><th>코드</th><th>명칭</th><th>용량</th><th>일수</th></tr></thead>
-      <tbody>
-      <tr th:each="p : ${prescriptions}">
-        <td th:text="${p.drugCode}"></td>
-        <td th:text="${p.drugName}"></td>
-        <td th:text="${p.dosage}"></td>
-        <td th:text="${p.days}"></td>
-      </tr>
-      </tbody>
-    </table>
-  </section>
-
-  <div style="display: flex; gap: 24px; align-items: flex-start;">
-    <!-- 예약 내역 -->
-    <section class="appointments-section" id="appointmentsSection" style="flex: 0 0 350px; min-width: 0;">
-      <h3>예약 내역</h3>
-      <table>
-        <thead><tr><th>날짜</th><th>시간</th><th>상태</th><th>메모</th></tr></thead>
-        <tbody>
-        <tr th:each="a : ${appointments}"
-            th:attr="data-date=${a.appointment_date},data-time=${a.appointment_time}">
-          <td th:text="${a.appointment_date}"></td>
-          <td th:text="${a.appointment_time}"></td>
-          <td th:text="${a.status}"></td>
-          <td th:text="${a.remarks}"></td>
-        </tr>
-        </tbody>
-      </table>
+    <!-- 진료 내역 -->
+    <section class="visits-section">
+        <h3>진료 내역</h3>
+        <table>
+            <thead>
+            <tr>
+                <th>날짜</th>
+                <th>시간</th>
+                <th>사유</th>
+                <th>상세보기</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="v : ${visits}" th:if="${v.visitId} != ${currentVisitId}">
+                <td th:text="${v.visitDate}"></td>
+                <td th:text="${v.visitTime}"></td>
+                <td th:text="${v.visitReason}"></td>
+                <td>
+                    <button class="btn" th:onclick="|showVisitDetail(${v.visitId})|">상세보기</button>
+                </td>
+            </tr>
+            </tbody>
+        </table>
     </section>
 
-    <!-- 예약 캘린더 추가 -->
-    <section class="calendar-section" style="flex: 1 1 0;">
-      <div id="calendar"></div>
+    <!-- 전체 처방 내역 (visit_id 상관없이) -->
+    <section class="prescriptions-section">
+        <h3>전체 처방 내역</h3>
+        <table>
+            <thead>
+            <tr>
+                <th>코드</th>
+                <th>명칭</th>
+                <th>용량</th>
+                <th>일수</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="p : ${prescriptions}">
+                <td th:text="${p.drugCode}"></td>
+                <td th:text="${p.drugName}"></td>
+                <td th:text="${p.dosage}"></td>
+                <td th:text="${p.days}"></td>
+            </tr>
+            </tbody>
+        </table>
     </section>
-  </div>
+
+    <div style="display: flex; gap: 24px; align-items: flex-start;">
+        <!-- 예약 내역 -->
+        <section class="appointments-section" id="appointmentsSection" style="flex: 0 0 350px; min-width: 0;">
+            <h3>예약 내역</h3>
+            <table>
+                <thead>
+                <tr>
+                    <th>날짜</th>
+                    <th>시간</th>
+                    <th>상태</th>
+                    <th>메모</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:attr="data-date=${a.appointment_date},data-time=${a.appointment_time}"
+                    th:each="a : ${appointments}">
+                    <td th:text="${a.appointment_date}"></td>
+                    <td th:text="${a.appointment_time}"></td>
+                    <td th:text="${a.status}"></td>
+                    <td th:text="${a.remarks}"></td>
+                </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- 예약 캘린더 추가 -->
+        <section class="calendar-section" style="flex: 1 1 0;">
+            <div id="calendar"></div>
+        </section>
+    </div>
 
 </main>
 
-  <!-- Footer -->
+<!-- Footer -->
 <div th:insert="~{fragments/footer :: footer}"></div>
 
 <!-- 진료 상세 모달 -->
-<div id="visitDetailModal" class="modal">
-  <div class="modal-content">
-    <span class="close" onclick="closeDetailModal()">&times;</span>
-    <h3>진료 상세</h3>
-    <p>
-      <strong>날짜:</strong> <span id="modalVisitDate"></span>
-      <strong>시간:</strong> <span id="modalVisitTime"></span>
-    </p>
-    <h4>진단</h4>
-    <table id="diagnosisDetailTable">
-      <thead>
-      <tr><th>코드</th><th>명칭</th><th>과</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-    <h4>처방</h4>
-    <table id="prescriptionDetailTable">
-      <thead>
-      <tr><th>코드</th><th>명칭</th><th>용량</th><th>일수</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
+<div class="modal" id="visitDetailModal">
+    <div class="modal-content">
+        <span class="close" onclick="closeDetailModal()">&times;</span>
+        <h3>진료 상세</h3>
+        <p>
+            <strong>날짜:</strong> <span id="modalVisitDate"></span>
+            <strong>시간:</strong> <span id="modalVisitTime"></span>
+        </p>
+        <h4>진단</h4>
+        <table id="diagnosisDetailTable">
+            <thead>
+            <tr>
+                <th>코드</th>
+                <th>명칭</th>
+                <th>과</th>
+            </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+        <h4>처방</h4>
+        <table id="prescriptionDetailTable">
+            <thead>
+            <tr>
+                <th>코드</th>
+                <th>명칭</th>
+                <th>용량</th>
+                <th>일수</th>
+            </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
 </div>
 
 <!-- 신규 예약 등록 모달 -->
-<div id="newAppointmentModal" class="modal">
-  <div class="modal-content">
-    <span class="close" onclick="closeNewAppointmentModal()">&times;</span>
-    <h3>새 예약 등록</h3>
-    <div id="errorMsg" style="color: red; display: none;"></div>
-    <form id="appointmentForm">
-      <input type="hidden" name="patient_id" th:value="${patient.id}" />
-      <div><label>의료진 ID: <input type="number" name="staff_id" required/></label></div>
-      <div><label>날짜: <input type="date" name="appointment_date" required/></label></div>
-      <div><label>시간: <input type="time" name="appointment_time" required/></label></div>
-      <div><label>메모: <input type="text" name="remarks"/></label></div>
-      <button type="submit" class="btn">등록</button>
-    </form>
-  </div>
+<div class="modal" id="newAppointmentModal">
+    <div class="modal-content">
+        <span class="close" onclick="closeNewAppointmentModal()">&times;</span>
+        <h3>새 예약 등록</h3>
+        <div id="errorMsg" style="color: red; display: none;"></div>
+        <form id="appointmentForm">
+            <input name="patient_id" th:value="${patient.id}" type="hidden"/>
+            <div><label>의료진 ID: <input name="staff_id" required type="number"/></label></div>
+            <div><label>날짜: <input name="appointment_date" required type="date"/></label></div>
+            <div><label>시간: <input name="appointment_time" required type="time"/></label></div>
+            <div><label>메모: <input name="remarks" type="text"/></label></div>
+            <button class="btn" type="submit">등록</button>
+        </form>
+    </div>
 </div>
 
 <!-- 알림 설정 모달 -->
-<div id="notificationSettingsModal" class="modal">
-  <div class="modal-content">
-    <span class="close" onclick="closeNotificationSettingsModal()">&times;</span>
-    <h3>알림 설정</h3>
-    <form id="notificationSettingsForm" onsubmit="saveAlertSettings(); return false;">
-      <label>알림 시간 설정:</label>
-      <div class="alert-time-inputs">
-        <input type="number" id="alertHours" name="hours" min="0" value="1"/> 시간
-        <input type="number" id="alertMinutes" name="minutes" min="0" max="59" value="0"/> 분 전
-      </div>
-      <fieldset>
-        <legend>알림 켜기/끄기</legend>
-        <label>
-          <input type="radio" name="enableAlerts" value="on" checked/>
-          켜기
-        </label>
-        <label>
-          <input type="radio" name="enableAlerts" value="off"/>
-          끄기
-        </label>
-      </fieldset>
-      <button type="submit" class="btn">저장</button>
-    </form>
-  </div>
+<div class="modal" id="notificationSettingsModal">
+    <div class="modal-content">
+        <span class="close" onclick="closeNotificationSettingsModal()">&times;</span>
+        <h3>알림 설정</h3>
+        <form id="notificationSettingsForm" onsubmit="saveAlertSettings(); return false;">
+            <label>알림 시간 설정:</label>
+            <div class="alert-time-inputs">
+                <input id="alertHours" min="0" name="hours" type="number" value="1"/> 시간
+                <input id="alertMinutes" max="59" min="0" name="minutes" type="number" value="0"/> 분 전
+            </div>
+            <fieldset>
+                <legend>알림 켜기/끄기</legend>
+                <label>
+                    <input checked name="enableAlerts" type="radio" value="on"/>
+                    켜기
+                </label>
+                <label>
+                    <input name="enableAlerts" type="radio" value="off"/>
+                    끄기
+                </label>
+            </fieldset>
+            <button class="btn" type="submit">저장</button>
+        </form>
+    </div>
 </div>
 
 <!-- 예약 알림 모달 -->
-<div id="alertModal" class="modal">
-  <div class="modal-content">
-    <h3>예약 시간</h3>
-    <p id="alertText"></p>
-    <button class="btn" onclick="closeAlertModal()">확인</button>
-  </div>
+<div class="modal" id="alertModal">
+    <div class="modal-content">
+        <h3>예약 시간</h3>
+        <p id="alertText"></p>
+        <button class="btn" onclick="closeAlertModal()">확인</button>
+    </div>
 </div>
 
 <!-- 예약 변경 모달 -->
-<div id="changeModal" class="modal" style="display:none; align-items:center; justify-content:center;">
-  <div class="modal-content">
-    <span class="close" onclick="closeChangeModal()">&times;</span>
-    <h3>예약 변경</h3>
-    <input type="datetime-local" id="changeDateTime" />
-    <button class="btn" onclick="submitChangeAppointment()">변경</button>
-    <button class="btn" onclick="">삭제</button>
-  </div>
+<div class="modal" id="changeModal" style="display:none; align-items:center; justify-content:center;">
+    <div class="modal-content">
+        <span class="close" onclick="closeChangeModal()">&times;</span>
+        <h3>예약 변경</h3>
+        <input id="changeDateTime" type="datetime-local"/>
+        <button class="btn" onclick="submitChangeAppointment()">변경</button>
+        <button class="btn" onclick="">삭제</button>
+    </div>
 </div>
 
 <!-- 문진표 작성 모달 -->
-<div id="surveyModal" class="modal" style="display:none;">
-  <div class="modal-content" style="max-width:500px;">
-    <span class="close" onclick="closeSurveyModal()">&times;</span>
-    <h3>문진표 작성</h3>
-    <form id="surveyForm" class="survey-form">
-      <input type="hidden" name="patientId" th:value="${patient.id}">
-      <div id="surveyQuestionArea"></div>
-      <button type="submit" class="survey-btn">제출</button>
-      <div id="surveyMsg" style="color:green; display:none;">제출 완료!</div>
+<div class="modal" id="surveyModal" style="display:none;">
+    <div class="modal-content" style="max-width:500px;">
+        <span class="close" onclick="closeSurveyModal()">&times;</span>
+        <h3>문진표 작성</h3>
+        <form class="survey-form" id="surveyForm">
+            <input name="patientId" th:value="${patient.id}" type="hidden">
+            <div id="surveyQuestionArea"></div>
+            <button class="survey-btn" type="submit">제출</button>
+            <div id="surveyMsg" style="color:green; display:none;">제출 완료!</div>
+        </form>
+    </div>
+</div>
+
+
+<!-- 내 정보 수정 모달 -->
+<div id="profileModal" class="modal" style="display:none;">
+  <div class="modal-content">
+    <span class="close" onclick="closeProfileModal()">&times;</span>
+    <form method="post" action="/patient/home/update">
+      <h3>내 정보 수정</h3>
+      <label>이름</label>
+      <input type="text" th:value="${patient.name}" readonly><br>
+      <label>전화번호 ('-' 없이 입력)</label>
+      <input type="text" name="phone_number" th:value="${patient.phone_number}"><br>
+      <label>이메일</label>
+      <input type="email" name="email" th:value="${patient.email}"><br>
+      <label>주소</label>
+      <input type="text" name="address" th:value="${patient.address}"><br>
+      <button type="submit">저장</button>
+      <!-- 성공 메시지 -->
+      <div th:if="${profileSuccess}" style="color:green; margin-top:10px;">
+        [[${profileSuccess}]]
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- 자가 진단 모달 -->
+<div id="symptomModal" class="modal" style="display:none;">
+  <div class="modal-content">
+    <span class="close" onclick="closeSymptomModal()">&times;</span>
+    <form id="symptomForm" onsubmit="return diagnoseSymptom(event)">
+      <h3>간단 자가진단</h3>
+      <div>
+        <label>1. 최근 1주일 내에 목이 아픈가요?</label><br>
+        <input type="radio" name="q1" value="Y" required> 예
+        <input type="radio" name="q1" value="N"> 아니오
+      </div>
+      <div>
+        <label>2. 발열(열이 남)이 있나요?</label><br>
+        <input type="radio" name="q2" value="Y" required> 예
+        <input type="radio" name="q2" value="N"> 아니오
+      </div>
+      <div>
+        <label>3. 코막힘/콧물이 있나요?</label><br>
+        <input type="radio" name="q3" value="Y" required> 예
+        <input type="radio" name="q3" value="N"> 아니오
+      </div>
+      <button type="submit">AI 결과 보기</button>
+      <div id="diagnoseResult" style="margin-top:15px; color:blue;"></div>
     </form>
   </div>
 </div>
 
 <script>
-  // 신규 예약 모달
-  function openNewAppointmentModal() {
-    document.getElementById('newAppointmentModal').style.display = 'flex';
-  }
-  function closeNewAppointmentModal() {
-    document.getElementById('newAppointmentModal').style.display = 'none';
-  }
-  // 알림 설정 모달
-  function openNotificationSettingsModal() {
-    document.getElementById('notificationSettingsModal').style.display = 'flex';
-  }
-  function closeNotificationSettingsModal() {
-    document.getElementById('notificationSettingsModal').style.display = 'none';
-  }
-  function saveAlertSettings() {
-    const selected = document.querySelector('input[name="enableAlerts"]:checked').value;
-    const enabled = (selected === 'on');
-    const hours   = document.getElementById('alertHours').value;
-    const minutes = document.getElementById('alertMinutes').value;
-
-    alert(`알림 ${enabled ? '활성화' : '비활성화'} — ${hours}시간 ${minutes}분 전`);
-
-    closeNotificationSettingsModal();
-  }
-  // 모달 외부 클릭 시 닫기
-  window.onclick = function(e) {
-    if (e.target.classList.contains('modal')) {
-      e.target.style.display = 'none';
+    // 신규 예약 모달
+    function openNewAppointmentModal() {
+        document.getElementById('newAppointmentModal').style.display = 'flex';
     }
-  }
+
+    function closeNewAppointmentModal() {
+        document.getElementById('newAppointmentModal').style.display = 'none';
+    }
+
+    // 알림 설정 모달
+    function openNotificationSettingsModal() {
+        document.getElementById('notificationSettingsModal').style.display = 'flex';
+    }
+
+    function closeNotificationSettingsModal() {
+        document.getElementById('notificationSettingsModal').style.display = 'none';
+    }
+
+    function saveAlertSettings() {
+        const selected = document.querySelector('input[name="enableAlerts"]:checked').value;
+        const enabled = (selected === 'on');
+        const hours = document.getElementById('alertHours').value;
+        const minutes = document.getElementById('alertMinutes').value;
+
+        alert(`알림 ${enabled ? '활성화' : '비활성화'} — ${hours}시간 ${minutes}분 전`);
+
+        closeNotificationSettingsModal();
+    }
+
+    // 모달 외부 클릭 시 닫기
+    window.onclick = function (e) {
+        if (e.target.classList.contains('modal')) {
+            e.target.style.display = 'none';
+        }
+    }
 </script>
 <script>
-  function showVisitDetail(visitId) {
-    console.log('상세보기 호출, visitId=', visitId);
-    fetch(`/patient/visit/${visitId}/detail`)
+    function showVisitDetail(visitId) {
+        console.log('상세보기 호출, visitId=', visitId);
+        fetch(`/patient/visit/${visitId}/detail`)
             .then(res => {
-              if (!res.ok) throw new Error(`HTTP ${res.status}`);
-              return res.json();
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                return res.json();
             })
             .then(data => {
-              console.log('받은 데이터:', data);
-              document.getElementById('modalVisitDate').textContent  = data.visitDate;
-              document.getElementById('modalVisitTime').textContent  = data.visitTime;
-              // 진단 테이블 채우기
-              const diagBody = document.querySelector('#diagnosisDetailTable tbody');
-              diagBody.innerHTML = '';
-              data.diagnoses.forEach(d => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `<td>${d.diagnosisCode}</td><td>${d.diagnosisName}</td><td>${d.department}</td>`;
-                diagBody.appendChild(tr);
-              });
-              // 처방 테이블 채우기
-              const presBody = document.querySelector('#prescriptionDetailTable tbody');
-              presBody.innerHTML = '';
-              data.prescriptions.forEach(p => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `<td>${p.drugCode}</td><td>${p.drugName}</td><td>${p.dosage}</td><td>${p.days}</td>`;
-                presBody.appendChild(tr);
-              });
-              // 모달을 화면 중앙(flex)으로 띄우기
-              document.getElementById('visitDetailModal').style.display = 'flex';
+                console.log('받은 데이터:', data);
+                document.getElementById('modalVisitDate').textContent = data.visitDate;
+                document.getElementById('modalVisitTime').textContent = data.visitTime;
+                // 진단 테이블 채우기
+                const diagBody = document.querySelector('#diagnosisDetailTable tbody');
+                diagBody.innerHTML = '';
+                data.diagnoses.forEach(d => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td>${d.diagnosisCode}</td><td>${d.diagnosisName}</td><td>${d.department}</td>`;
+                    diagBody.appendChild(tr);
+                });
+                // 처방 테이블 채우기
+                const presBody = document.querySelector('#prescriptionDetailTable tbody');
+                presBody.innerHTML = '';
+                data.prescriptions.forEach(p => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td>${p.drugCode}</td><td>${p.drugName}</td><td>${p.dosage}</td><td>${p.days}</td>`;
+                    presBody.appendChild(tr);
+                });
+                // 모달을 화면 중앙(flex)으로 띄우기
+                document.getElementById('visitDetailModal').style.display = 'flex';
             })
             .catch(err => {
-              console.error('상세보기 오류:', err);
-              alert('상세 정보를 불러오는 중 오류가 발생했습니다.');
+                console.error('상세보기 오류:', err);
+                alert('상세 정보를 불러오는 중 오류가 발생했습니다.');
             });
-  }
-
-  function closeDetailModal() {
-    document.getElementById('visitDetailModal').style.display = 'none';
-  }
-
-  // 모달 외부 클릭 시 닫기
-  window.addEventListener('click', e => {
-    if (e.target.id === 'visitDetailModal') {
-      closeDetailModal();
     }
-  });
+
+    function closeDetailModal() {
+        document.getElementById('visitDetailModal').style.display = 'none';
+    }
+
+    // 모달 외부 클릭 시 닫기
+    window.addEventListener('click', e => {
+        if (e.target.id === 'visitDetailModal') {
+            closeDetailModal();
+        }
+    });
 </script>
 <script th:inline="javascript">
-  /*<![CDATA[*/
-  const patientId = [[${patient.id}]];
-  let notificationSettings = {
-    enabled:   [[${alertSetting.enabled}]],
-    hoursBefore: [[${alertSetting.hoursBefore}]],
-    minutesBefore: [[${alertSetting.minutesBefore}]]
-  };
-  /*]]>*/
+    /*<![CDATA[*/
+    const patientId = [[${patient.id}]];
+    let notificationSettings = {
+        enabled: [[${alertSetting.enabled}]],
+        hoursBefore: [[${alertSetting.hoursBefore}]],
+        minutesBefore: [[${alertSetting.minutesBefore}]]
+    };
+    /*]]>*/
 </script>
 <script>
-  // 1) 페이지 로딩 시 한 번만 DB에서 읽어오기
-  fetch(`/alertSetting/${patientId}`)
-          .then(res => res.json())
-          .then(cfg => {
-            notificationSettings.enabled     = cfg.enabled;
+    // 1) 페이지 로딩 시 한 번만 DB에서 읽어오기
+    fetch(`/alertSetting/${patientId}`)
+        .then(res => res.json())
+        .then(cfg => {
+            notificationSettings.enabled = cfg.enabled;
             notificationSettings.hoursBefore = cfg.hoursBefore;
             notificationSettings.minutesBefore = cfg.minutesBefore;
-          })
-          .catch(err => console.error('알림 설정 로드 실패:', err));
+        })
+        .catch(err => console.error('알림 설정 로드 실패:', err));
 
-  // 2) 모달 띄우기/닫기
-  function showAlertModal(text) {
-    document.getElementById('alertText').textContent = text;
-    document.getElementById('alertModal').style.display = 'flex';
-  }
-  function closeAlertModal() {
-    document.getElementById('alertModal').style.display = 'none';
-  }
+    // 2) 모달 띄우기/닫기
+    function showAlertModal(text) {
+        document.getElementById('alertText').textContent = text;
+        document.getElementById('alertModal').style.display = 'flex';
+    }
+
+    function closeAlertModal() {
+        document.getElementById('alertModal').style.display = 'none';
+    }
 </script>
 <script>
-  function saveAlertSettings() {
-    const selected = document.querySelector('input[name="enableAlerts"]:checked').value;
-    const enabled  = (selected === 'on');
-    const hours    = parseInt(document.getElementById('alertHours').value, 10);
-    const minutes  = parseInt(document.getElementById('alertMinutes').value, 10);
+    function saveAlertSettings() {
+        const selected = document.querySelector('input[name="enableAlerts"]:checked').value;
+        const enabled = (selected === 'on');
+        const hours = parseInt(document.getElementById('alertHours').value, 10);
+        const minutes = parseInt(document.getElementById('alertMinutes').value, 10);
 
-    fetch(`/alertSetting/${patientId}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        enabled: enabled,
-        hoursBefore: hours,
-        minutesBefore: minutes
-      })
-    })
+        fetch(`/alertSetting/${patientId}`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: new URLSearchParams({
+                enabled: enabled,
+                hoursBefore: hours,
+                minutesBefore: minutes
+            })
+        })
             .then(res => res.json())
             .then(cfg => {
-              // 저장된 설정으로 갱신
-              notificationSettings = {
-                enabled: cfg.enabled,
-                hoursBefore: cfg.hoursBefore,
-                minutesBefore: cfg.minutesBefore
-              };
-              alert('알림 설정이 저장되었습니다.');
-              closeNotificationSettingsModal();
+                // 저장된 설정으로 갱신
+                notificationSettings = {
+                    enabled: cfg.enabled,
+                    hoursBefore: cfg.hoursBefore,
+                    minutesBefore: cfg.minutesBefore
+                };
+                alert('알림 설정이 저장되었습니다.');
+                closeNotificationSettingsModal();
             })
             .catch(err => {
-              console.error('알림 설정 저장 실패:', err);
-              alert('저장 중 오류가 발생했습니다.');
+                console.error('알림 설정 저장 실패:', err);
+                alert('저장 중 오류가 발생했습니다.');
             });
-  }
+    }
 </script>
-  <script>
+<script>
     function checkAppointmentAlerts() {
-      if (!notificationSettings.enabled) return;
+        if (!notificationSettings.enabled) return;
 
-      const now = new Date();
-      document
-              .querySelectorAll('#appointmentsSection tbody tr[data-date][data-time]')
-              .forEach(tr => {
+        const now = new Date();
+        document
+            .querySelectorAll('#appointmentsSection tbody tr[data-date][data-time]')
+            .forEach(tr => {
                 const dateStr = tr.getAttribute('data-date');   // "2025-05-10"
                 const timeStr = tr.getAttribute('data-time');   // "14:30"
                 const apptDate = new Date(`${dateStr}T${timeStr}:00`);
 
                 const offsetMs =
-                        notificationSettings.hoursBefore  * 3600_000 +
-                        notificationSettings.minutesBefore *   60_000;
+                    notificationSettings.hoursBefore * 3600_000 +
+                    notificationSettings.minutesBefore * 60_000;
                 const alertTime = new Date(apptDate.getTime() - offsetMs);
 
                 // (alertTime ≤ now < alertTime + 1초) 이면 한번만 띄우기
                 if (now >= alertTime && now < alertTime + 1_000) {
-                  const diffMs = apptDate - now;
-                  if (diffMs > 0) {
-                    const leftH = Math.floor(diffMs / 3600_000);
-                    const leftM = Math.floor((diffMs % 3600_000) / 60_000);
-                    showAlertModal(`예약시간 ${leftH}시간 ${leftM}분 남았습니다.`);
-                  }
+                    const diffMs = apptDate - now;
+                    if (diffMs > 0) {
+                        const leftH = Math.floor(diffMs / 3600_000);
+                        const leftM = Math.floor((diffMs % 3600_000) / 60_000);
+                        showAlertModal(`예약시간 ${leftH}시간 ${leftM}분 남았습니다.`);
+                    }
                 }
-              });
+            });
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-      checkAppointmentAlerts();                // 즉시 체크
-      setInterval(checkAppointmentAlerts, 10_000);  // 10초마다 반복
+        checkAppointmentAlerts();                // 즉시 체크
+        setInterval(checkAppointmentAlerts, 10_000);  // 10초마다 반복
     });
-  </script>
-  <script>
-    document.getElementById("appointmentForm").addEventListener("submit", function(e) {
-      e.preventDefault();
+</script>
+<script>
+    document.getElementById("appointmentForm").addEventListener("submit", function (e) {
+        e.preventDefault();
 
-      const form = e.target;
-      const formData = new FormData(form);
+        const form = e.target;
+        const formData = new FormData(form);
 
-      fetch("/appointment", {
-        method: "POST",
-        body: formData
-      })
-              .then(res => res.json())
-              .then(data => {
+        fetch("/appointment", {
+            method: "POST",
+            body: formData
+        })
+            .then(res => res.json())
+            .then(data => {
                 const errorDiv = document.getElementById("errorMsg");
                 if (data.success) {
-                  errorDiv.style.display = "none";
-                  errorDiv.textContent = "";
-                  closeNewAppointmentModal();  // 모달 닫기
-                  location.reload();           // 새로고침으로 반영
+                    errorDiv.style.display = "none";
+                    errorDiv.textContent = "";
+                    closeNewAppointmentModal();  // 모달 닫기
+                    location.reload();           // 새로고침으로 반영
                 } else {
-                  errorDiv.textContent = data.message;
-                  errorDiv.style.display = "block";
+                    errorDiv.textContent = data.message;
+                    errorDiv.style.display = "block";
                 }
-              })
-              .catch(err => {
+            })
+            .catch(err => {
                 console.error("예약 등록 실패:", err);
                 const errorDiv = document.getElementById("errorMsg");
                 errorDiv.textContent = "알 수 없는 오류가 발생했습니다.";
                 errorDiv.style.display = "block";
-              });
+            });
     });
-  </script>
+</script>
 <script th:inline="javascript">
-  /*<![CDATA[*/
-  document.addEventListener('DOMContentLoaded', function() {
-    var calendarEl = document.getElementById('calendar');
-    if (!calendarEl) return; // calendar div 없는 경우 방지
-    var calendar = new FullCalendar.Calendar(calendarEl, {
-      initialView: 'dayGridMonth',
-      locale: 'ko',
-      events: '/appointment/calendar?patientId=' + patientId,
-      height: 'auto',
-      displayEventTime: false,
-      eventClick: function(info) {
-        openChangeModal(info.event.id, info.event.start);
-      }
+    /*<![CDATA[*/
+    document.addEventListener('DOMContentLoaded', function () {
+        var calendarEl = document.getElementById('calendar');
+        if (!calendarEl) return; // calendar div 없는 경우 방지
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            locale: 'ko',
+            events: '/appointment/calendar?patientId=' + patientId,
+            height: 'auto',
+            displayEventTime: false,
+            eventClick: function (info) {
+                openChangeModal(info.event.id, info.event.start);
+            }
+        });
+        calendar.render();
     });
-    calendar.render();
-  });
-  /*]]>*/
+    /*]]>*/
 </script>
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
-    const calendarEl = document.getElementById('appointmentCalendar');
-    window.calendar = new FullCalendar.Calendar(calendarEl, {
-      initialView: 'dayGridMonth',
-      locale: 'ko',
-      // 기존 URL 소스 대신 함수형 이벤트 로드로 id와 start 명시
-      events: function(fetchInfo, successCallback, failureCallback) {
-        fetch('/appointment/calendar?patientId=' + patientId)
-                .then(res => res.json())
-                .then(data => {
-                  const events = data.map(a => ({
-                    id: String(a.id),
-                    title: a.status || '예약',
-                    start: a.appointment_date + 'T' + a.appointment_time
-                  }));
-                  successCallback(events);
-                })
-                .catch(err => {
-                  console.error('Event load failed:', err);
-                  failureCallback(err);
-                });
-      },
-      eventClick: function(info) {
-        openChangeModal(info.event.id, info.event.start);
-      }
+    document.addEventListener('DOMContentLoaded', function () {
+        const calendarEl = document.getElementById('appointmentCalendar');
+        window.calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            locale: 'ko',
+            // 기존 URL 소스 대신 함수형 이벤트 로드로 id와 start 명시
+            events: function (fetchInfo, successCallback, failureCallback) {
+                fetch('/appointment/calendar?patientId=' + patientId)
+                    .then(res => res.json())
+                    .then(data => {
+                        const events = data.map(a => ({
+                            id: String(a.id),
+                            title: a.status || '예약',
+                            start: a.appointment_date + 'T' + a.appointment_time
+                        }));
+                        successCallback(events);
+                    })
+                    .catch(err => {
+                        console.error('Event load failed:', err);
+                        failureCallback(err);
+                    });
+            },
+            eventClick: function (info) {
+                openChangeModal(info.event.id, info.event.start);
+            }
+        });
+        calendar.render();
+
+        window.addEventListener('click', function (e) {
+            if (e.target.id === 'changeModal') closeChangeModal();
+        });
     });
-    calendar.render();
 
-    window.addEventListener('click', function(e) {
-      if (e.target.id === 'changeModal') closeChangeModal();
-    });
-  });
+    let selectedAppointmentId;
 
-  let selectedAppointmentId;
-
-  function openChangeModal(id, date) {
-    selectedAppointmentId = id;
-    const dateInput = document.getElementById('changeDateTime');
-    dateInput.value = date.toISOString().slice(0,16);
-    document.getElementById('changeModal').style.display = 'flex';
-  }
-
-  function closeChangeModal() {
-    document.getElementById('changeModal').style.display = 'none';
-  }
-
-  function submitChangeAppointment() {
-    const dateInput = document.getElementById('changeDateTime');
-    const newDateTime = dateInput.value;
-    if (!newDateTime) {
-      alert('변경할 시간을 선택해주세요.');
-      return;
+    function openChangeModal(id, date) {
+        selectedAppointmentId = id;
+        const dateInput = document.getElementById('changeDateTime');
+        dateInput.value = date.toISOString().slice(0, 16);
+        document.getElementById('changeModal').style.display = 'flex';
     }
-    // 선택된 ID가 문자열일 수 있으니 그대로 전달
-    fetch(`/appointment/${selectedAppointmentId}/change?newDateTime=${encodeURIComponent(newDateTime)}`, {
-      method: 'POST'
-    })
+
+    function closeChangeModal() {
+        document.getElementById('changeModal').style.display = 'none';
+    }
+
+    function submitChangeAppointment() {
+        const dateInput = document.getElementById('changeDateTime');
+        const newDateTime = dateInput.value;
+        if (!newDateTime) {
+            alert('변경할 시간을 선택해주세요.');
+            return;
+        }
+        // 선택된 ID가 문자열일 수 있으니 그대로 전달
+        fetch(`/appointment/${selectedAppointmentId}/change?newDateTime=${encodeURIComponent(newDateTime)}`, {
+            method: 'POST'
+        })
             .then(res => res.json())
             .then(data => {
-              alert(data.message);
-              if (data.success) {
-                closeChangeModal();
-                window.calendar.refetchEvents();
-              }
+                alert(data.message);
+                if (data.success) {
+                    closeChangeModal();
+                    window.calendar.refetchEvents();
+                }
             })
             .catch(err => {
-              console.error(err);
-              alert('예약 변경에 실패했습니다.');
+                console.error(err);
+                alert('예약 변경에 실패했습니다.');
             });
-  }
+    }
 </script>
 <script>
-  function openSurveyModal() {
-    document.getElementById('surveyModal').style.display = 'flex';
-    fetch('/survey/questions')
+    function openSurveyModal() {
+        document.getElementById('surveyModal').style.display = 'flex';
+        fetch('/survey/questions')
             .then(res => res.json())
             .then(list => {
-              let html = '';
-              let symptomQuestion = list.find(q => q.questionType === 'CHOICE' && q.questionText.includes('현재 증상'));
-              let medOXQuestion   = list.find(q => q.questionType === 'OX' && q.questionText === '최근 복용 약이 있나요?');
-              let medTextQuestion = list.find(q => q.questionType === 'TEXT' && q.questionText === '복용 중인 약을 입력하세요.');
+                let html = '';
+                let symptomQuestion = list.find(q => q.questionType === 'CHOICE' && q.questionText.includes('현재 증상'));
+                let medOXQuestion = list.find(q => q.questionType === 'OX' && q.questionText === '최근 복용 약이 있나요?');
+                let medTextQuestion = list.find(q => q.questionType === 'TEXT' && q.questionText === '복용 중인 약을 입력하세요.');
 
-              for (const q of list) {
-                // ---- 증상 체크박스(CHOICE): 옵션은 가로, 기타는 줄바꿈 아래에 따로 ----
-                if (symptomQuestion && q.id === symptomQuestion.id) {
-                  html += `<label>${q.questionText}</label><br>`;
-                  let options = q.choiceOptions ? q.choiceOptions.split(',').map(opt => opt.trim()) : [];
-                  // "기타" 빼고 한줄
-                  html += `<div style="margin-bottom:4px;">`;
-                  for (const opt of options) {
-                    if (opt !== '기타') {
-                      html += `<label style="margin-right:8px;"><input type="checkbox" name="answer_${q.id}" value="${opt}"> ${opt}</label>`;
-                    }
-                  }
-                  html += `</div>`;
-                  // "기타"만 아래 한줄(줄바꿈)
-                  if (options.includes('기타')) {
-                    html += `
+                for (const q of list) {
+                    // ---- 증상 체크박스(CHOICE): 옵션은 가로, 기타는 줄바꿈 아래에 따로 ----
+                    if (symptomQuestion && q.id === symptomQuestion.id) {
+                        html += `<label>${q.questionText}</label><br>`;
+                        let options = q.choiceOptions ? q.choiceOptions.split(',').map(opt => opt.trim()) : [];
+                        // "기타" 빼고 한줄
+                        html += `<div style="margin-bottom:4px;">`;
+                        for (const opt of options) {
+                            if (opt !== '기타') {
+                                html += `<label style="margin-right:8px;"><input type="checkbox" name="answer_${q.id}" value="${opt}"> ${opt}</label>`;
+                            }
+                        }
+                        html += `</div>`;
+                        // "기타"만 아래 한줄(줄바꿈)
+                        if (options.includes('기타')) {
+                            html += `
                             <div style="margin-bottom:10px;">
                                 <label>
                                     <input type="checkbox" id="etcSymptom" name="answer_${q.id}" value="기타" onclick="toggleEtcSymptom(this)">
@@ -568,116 +663,157 @@
                                 </span>
                             </div>
                         `;
-                  }
-                  html += '<br>';
-                }
-                // ---- 최근 복용 약이 있나요? (OX) ----
-                else if (medOXQuestion && q.id === medOXQuestion.id) {
-                  html += `<label>${q.questionText}</label><br>`;
-                  html += `
+                        }
+                        html += '<br>';
+                    }
+                    // ---- 최근 복용 약이 있나요? (OX) ----
+                    else if (medOXQuestion && q.id === medOXQuestion.id) {
+                        html += `<label>${q.questionText}</label><br>`;
+                        html += `
                         <input type="radio" name="answer_${q.id}" value="O" onclick="showMedInput(true)"> O
                         <input type="radio" name="answer_${q.id}" value="X" onclick="showMedInput(false)" checked> X
                         <br><br>
                         <div id="medInputDiv" style="display:none; margin-bottom:8px;"></div>
                     `;
-                }
-                // ---- 복용 중인 약을 입력하세요. (TEXT)는 **여기서 렌더링하지 않음** ----
-                else if (medTextQuestion && q.id === medTextQuestion.id) {
-                  // 아예 아무것도 출력하지 않음! (JS에서 동적으로 삽입)
-                }
-                // ---- 기본 ----
-                else {
-                  html += `<label>${q.questionText}</label><br>`;
-                  if (q.questionType === 'CHOICE') {
-                    const options = q.choiceOptions ? q.choiceOptions.split(',').map(opt=>opt.trim()) : [];
-                    for(const opt of options) {
-                      html += `<input type="radio" name="answer_${q.id}" value="${opt}"> ${opt} `;
                     }
-                  }
-                  else if(q.questionType === 'OX') {
-                    html += `<input type="radio" name="answer_${q.id}" value="O"> O `;
-                    html += `<input type="radio" name="answer_${q.id}" value="X"> X `;
-                  }
-                  else if(q.questionType === 'TEXT') {
-                    html += `<input type="text" name="answer_${q.id}" />`;
-                  }
-                  html += '<br><br>';
+                    // ---- 복용 중인 약을 입력하세요. (TEXT)는 **여기서 렌더링하지 않음** ----
+                    else if (medTextQuestion && q.id === medTextQuestion.id) {
+                        // 아예 아무것도 출력하지 않음! (JS에서 동적으로 삽입)
+                    }
+                    // ---- 기본 ----
+                    else {
+                        html += `<label>${q.questionText}</label><br>`;
+                        if (q.questionType === 'CHOICE') {
+                            const options = q.choiceOptions ? q.choiceOptions.split(',').map(opt => opt.trim()) : [];
+                            for (const opt of options) {
+                                html += `<input type="radio" name="answer_${q.id}" value="${opt}"> ${opt} `;
+                            }
+                        } else if (q.questionType === 'OX') {
+                            html += `<input type="radio" name="answer_${q.id}" value="O"> O `;
+                            html += `<input type="radio" name="answer_${q.id}" value="X"> X `;
+                        } else if (q.questionType === 'TEXT') {
+                            html += `<input type="text" name="answer_${q.id}" />`;
+                        }
+                        html += '<br><br>';
+                    }
                 }
-              }
-              document.getElementById('surveyQuestionArea').innerHTML = html;
+                document.getElementById('surveyQuestionArea').innerHTML = html;
             });
-  }
-
-  // 기타 체크박스 입력창 토글
-  function toggleEtcSymptom(cb) {
-    document.getElementById('etcSymptomDiv').style.display = cb.checked ? 'inline-block' : 'none';
-  }
-
-  // 복용약 O 선택시만 입력란 동적 생성
-  function showMedInput(show) {
-    // medTextQuestion의 id는 서버에서 질문 불러올 때 항상 "복용 중인 약을 입력하세요."의 question.id임
-    fetch('/survey/questions')
-            .then(res => res.json())
-            .then(list => {
-              let medText = list.find(q => q.questionType === 'TEXT' && q.questionText === '복용 중인 약을 입력하세요.');
-              const medInputDiv = document.getElementById('medInputDiv');
-              if (!medInputDiv) return;
-              if (show && medText) {
-                medInputDiv.innerHTML = `<input type="text" name="answer_${medText.id}" placeholder="복용 중인 약을 입력하세요.">`;
-                medInputDiv.style.display = 'block';
-              } else {
-                medInputDiv.innerHTML = '';
-                medInputDiv.style.display = 'none';
-              }
-            });
-  }
-
-  function closeSurveyModal() {
-    document.getElementById('surveyModal').style.display = 'none';
-  }
-
-  document.getElementById('surveyForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const form = e.target;
-    const formData = new FormData();
-
-    // 각 질문별로 처리
-    const questionDiv = document.getElementById('surveyQuestionArea');
-    // 모든 name="answer_x"인 것들을 질문별로 그룹화
-    const answerInputs = questionDiv.querySelectorAll('[name^="answer_"]');
-    const grouped = {};
-    answerInputs.forEach(input => {
-      const name = input.name;
-      if (!grouped[name]) grouped[name] = [];
-      if ((input.type === 'checkbox' && input.checked) || input.type === 'radio' && input.checked || input.type === 'text' || input.tagName === 'TEXTAREA') {
-        grouped[name].push(input.value);
-      }
-    });
-
-    for (const key in grouped) {
-      if (grouped[key].length > 1) {
-        formData.append(key, grouped[key].join(', '));
-      } else {
-        formData.append(key, grouped[key][0]);
-      }
     }
 
-    // patientId 추가
-    formData.append('patientId', form.patientId.value);
+    // 기타 체크박스 입력창 토글
+    function toggleEtcSymptom(cb) {
+        document.getElementById('etcSymptomDiv').style.display = cb.checked ? 'inline-block' : 'none';
+    }
 
-    fetch('/survey/submit', {
-      method: 'POST',
-      body: formData
-    })
-            .then(res=>res.json())
-            .then(data=>{
-              if(data.success){
-                document.getElementById('surveyMsg').style.display = 'block';
-                setTimeout(closeSurveyModal, 1000);
-              }
+    // 복용약 O 선택시만 입력란 동적 생성
+    function showMedInput(show) {
+        // medTextQuestion의 id는 서버에서 질문 불러올 때 항상 "복용 중인 약을 입력하세요."의 question.id임
+        fetch('/survey/questions')
+            .then(res => res.json())
+            .then(list => {
+                let medText = list.find(q => q.questionType === 'TEXT' && q.questionText === '복용 중인 약을 입력하세요.');
+                const medInputDiv = document.getElementById('medInputDiv');
+                if (!medInputDiv) return;
+                if (show && medText) {
+                    medInputDiv.innerHTML = `<input type="text" name="answer_${medText.id}" placeholder="복용 중인 약을 입력하세요.">`;
+                    medInputDiv.style.display = 'block';
+                } else {
+                    medInputDiv.innerHTML = '';
+                    medInputDiv.style.display = 'none';
+                }
             });
-  });
+    }
+
+    function closeSurveyModal() {
+        document.getElementById('surveyModal').style.display = 'none';
+    }
+
+    document.getElementById('surveyForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const form = e.target;
+        const formData = new FormData();
+
+        // 각 질문별로 처리
+        const questionDiv = document.getElementById('surveyQuestionArea');
+        // 모든 name="answer_x"인 것들을 질문별로 그룹화
+        const answerInputs = questionDiv.querySelectorAll('[name^="answer_"]');
+        const grouped = {};
+        answerInputs.forEach(input => {
+            const name = input.name;
+            if (!grouped[name]) grouped[name] = [];
+            if ((input.type === 'checkbox' && input.checked) || input.type === 'radio' && input.checked || input.type === 'text' || input.tagName === 'TEXTAREA') {
+                grouped[name].push(input.value);
+            }
+        });
+
+        for (const key in grouped) {
+            if (grouped[key].length > 1) {
+                formData.append(key, grouped[key].join(', '));
+            } else {
+                formData.append(key, grouped[key][0]);
+            }
+        }
+
+        // patientId 추가
+        formData.append('patientId', form.patientId.value);
+
+        fetch('/survey/submit', {
+            method: 'POST',
+            body: formData
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('surveyMsg').style.display = 'block';
+                    setTimeout(closeSurveyModal, 1000);
+                }
+            });
+    });
 </script>
+<script>
+    function openProfileModal() {
+        document.getElementById("profileModal").style.display = "flex";
+    }
+
+    function closeProfileModal() {
+        document.getElementById("profileModal").style.display = "none";
+    }
+
+    // 바깥 클릭 시 모달 닫기
+    window.onclick = function (event) {
+        var modal = document.getElementById("profileModal");
+        if (event.target == modal) {
+            closeProfileModal();
+        }
+    }
+</script>
+
+<!--<script>-->
+<!--  function diagnoseSymptomAI(e) {-->
+<!--    e.preventDefault();-->
+<!--    let q1 = document.querySelector('input[name="q1"]:checked').value;-->
+<!--    let q2 = document.querySelector('input[name="q2"]:checked').value;-->
+<!--    let q3 = document.querySelector('input[name="q3"]:checked').value;-->
+
+<!--    let body = JSON.stringify({q1, q2, q3});-->
+<!--    document.getElementById("diagnoseResult").innerText = "AI가 분석 중...";-->
+
+<!--    fetch('/patient/self-diagnosis/ai', {-->
+<!--      method: 'POST',-->
+<!--      headers: {'Content-Type': 'application/json'},-->
+<!--      body: body-->
+<!--    })-->
+<!--            .then(res => res.json())-->
+<!--            .then(data => {-->
+<!--              document.getElementById("diagnoseResult").innerText = data.result;-->
+<!--            })-->
+<!--            .catch(() => {-->
+<!--              document.getElementById("diagnoseResult").innerText = "AI 서버 오류!";-->
+<!--            });-->
+<!--    return false;-->
+<!--  }-->
+<!--</script>-->
 </body>
 
 </html>

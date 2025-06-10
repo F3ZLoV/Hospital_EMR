@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>공지사항</title>
+</head>
+<body>
+<h2>공지사항</h2>
+  <table>
+    <tr>
+      <th>제목</th>
+      <th>작성일</th>
+      <th>분류</th>
+    </tr>
+    <tr th:each="notice : ${notices}">
+      <td>
+        <a th:href="@{/notice/{id}(id=${notice.noticeId})}"
+           th:text="${notice.title}"></a>
+      </td>
+      <td th:text="${#temporals.format(notice.postedAt, 'yyyy-MM-dd')}"></td>
+      <td th:text="${notice.type}"></td>
+    </tr>
+  </table>
+</body>
+</html>

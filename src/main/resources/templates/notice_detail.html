@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+  <h2 th:text="${notice.title}">공지 제목</h2>
+  <div>
+    <span th:text="${notice.writer}"></span> |
+    <span th:text="${#temporals.format(notice.postedAt, 'yyyy-MM-dd HH:mm')}"></span>
+  </div>
+  <hr>
+  <p th:text="${notice.content}"></p>
+  <a href="/notice">목록으로</a>
+</body>
+</html>

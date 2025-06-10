@@ -4,6 +4,8 @@ import com.example.hospitalemr.domain.Appointment;
 import com.example.hospitalemr.domain.Patient;
 import com.example.hospitalemr.repository.AppointmentRepository;
 import com.example.hospitalemr.repository.PatientRepository;
+import com.example.hospitalemr.service.AppointmentService;
+import com.example.hospitalemr.service.EmailService;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -24,10 +26,15 @@ public class AppointmentController {
 
     private final AppointmentRepository appointmentRepository;
     private final PatientRepository patientRepository; // 추가된 부분
+    private final AppointmentService appointmentService;
+    private final EmailService emailService;
 
-    public AppointmentController(AppointmentRepository appointmentRepository, PatientRepository patientRepository) {
+    public AppointmentController(AppointmentRepository appointmentRepository, PatientRepository patientRepository,
+                                 AppointmentService appointmentService, EmailService emailService) {
         this.appointmentRepository = appointmentRepository;
         this.patientRepository = patientRepository;
+        this.appointmentService = appointmentService;
+        this.emailService = emailService;
     }
 
 
@@ -36,38 +43,33 @@ public class AppointmentController {
     @ResponseBody
     public Map<String, Object> createAppointment(@ModelAttribute Appointment appointment) {
         Map<String, Object> result = new HashMap<>();
-
         try {
-            LocalDate newDate = appointment.getAppointment_date();
-            LocalTime newTime = appointment.getAppointment_time();
+            Patient patient = patientRepository.findById(Long.valueOf(appointment.getPatient_id()))
+                    .orElse(null);
 
-            // 같은 날짜의 예약 모두 불러옴
-            List<Appointment> sameDateAppointments = appointmentRepository.findAll().stream()
-                    .filter(appt -> appt.getAppointment_date().equals(newDate))
-                    .collect(Collectors.toList());
-
-            boolean conflict = sameDateAppointments.stream().anyMatch(existing -> {
-                long diff = Math.abs(java.time.Duration.between(existing.getAppointment_time(), newTime).toMinutes());
-                return diff < 5;
-            });
-
-            if (conflict) {
+            if (patient == null) {
                 result.put("success", false);
-                result.put("message", "예약 시간이 기존 예약과 5분 이내로 겹칩니다.");
+                result.put("message", "환자 정보를 찾을 수 없습니다.");
                 return result;
             }
 
-            // 중복 없을 경우 저장
             appointment.setStatus("예약");
             appointmentRepository.save(appointment);
 
+            // **이메일 발송 추가**
+            emailService.sendReservationEmail(
+                    patient.getEmail(),
+                    patient.getName(),
+                    appointment.getAppointment_date().toString(),
+                    appointment.getAppointment_time().toString()
+            );
             result.put("success", true);
             result.put("message", "예약 등록에 성공하였습니다.");
         } catch (Exception e) {
             result.put("success", false);
             result.put("message", "예약 등록에 실패하였습니다.");
+            e.printStackTrace();
         }
-
         return result;
     }
 
@@ -188,4 +190,5 @@ public class AppointmentController {
             return event;
         }).collect(Collectors.toList());
     }
+
 }

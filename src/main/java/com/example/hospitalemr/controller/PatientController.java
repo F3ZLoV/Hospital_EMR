@@ -3,10 +3,14 @@ package com.example.hospitalemr.controller;
 import com.example.hospitalemr.domain.*;
 import com.example.hospitalemr.repository.*;
 import com.example.hospitalemr.service.AlertSettingService;
+//import com.example.hospitalemr.service.OpenAiService;
+import com.example.hospitalemr.service.PatientService;
 import jakarta.servlet.http.HttpSession;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.nio.file.AccessDeniedException;
 import java.time.LocalDate;
@@ -27,13 +31,15 @@ public class PatientController {
     private final DiagnosisRepository diagnosisRepository;
     private final MedicalVisitController  medicalVisitController;
     private final AlertSettingService alertSettingService;
+    private final PatientService patientService;
 
     public PatientController(PatientRepository patientRepository,
                              MedicalVisitRepository medicalVisitRepository,
                              PrescriptionRepository prescriptionRepository,
                              AppointmentRepository appointmentRepository,
                              DiagnosisRepository diagnosisRepository,
-                             MedicalVisitController medicalVisitController, AlertSettingService alertSettingService) {
+                             MedicalVisitController medicalVisitController, AlertSettingService alertSettingService,
+                             PatientService patientService) {
         this.patientRepository = patientRepository;
         this.medicalVisitRepository = medicalVisitRepository;
         this.prescriptionRepository = prescriptionRepository;
@@ -41,6 +47,7 @@ public class PatientController {
         this.diagnosisRepository = diagnosisRepository;
         this.medicalVisitController = medicalVisitController;
         this.alertSettingService = alertSettingService;
+        this.patientService = patientService;
     }
 
     // 환자 전체 조회
@@ -298,7 +305,7 @@ public class PatientController {
      * 환자 홈 화면
      */
     @GetMapping("/home")
-    public String showPatientHome(HttpSession session, Model model) {
+    public String showPatientHome(HttpSession session, Model model, @ModelAttribute("profileSuccess") String profileSuccess) {
         Long patientId = (Long) session.getAttribute("patientId");
         if (patientId == null) {
             return "redirect:/login";
@@ -344,6 +351,7 @@ public class PatientController {
         AlertSetting setting = alertSettingService.loadOrCreate(patientId);
         model.addAttribute("alertSetting", setting);
 
+        model.addAttribute("profileSuccess", profileSuccess);
         return "patient_home";  // src/main/resources/templates/patient_home.html
     }
 
@@ -389,4 +397,35 @@ public class PatientController {
         return map;
     }
 
+    @PostMapping("/home/update")
+    public String updateProfile(HttpSession session,
+                                @RequestParam String phone_number,
+                                @RequestParam String address,
+                                @RequestParam String email,
+                                RedirectAttributes redirectAttributes) {
+
+        Long patientId = (Long) session.getAttribute("patientId");
+        patientService.updateContactInfo(patientId, phone_number, address, email);
+        redirectAttributes.addFlashAttribute("profileSuccess", "수정되었습니다!");
+        return "redirect:/patient/home";
+    }
+
+//    @Autowired
+//    private OpenAiService openAiService;
+//
+//    @PostMapping("/self-diagnosis/ai")
+//    @ResponseBody
+//    public Map<String, String> aiSelfDiagnosis(@RequestBody Map<String, String> answer) {
+//        String prompt = buildPrompt(answer); // 설문 답변을 AI에 보낼 프롬프트로 변환
+//        String aiResult = openAiService.askGpt(prompt);
+//        return Map.of("result", aiResult);
+//    }
+//
+//    private String buildPrompt(Map<String, String> answer) {
+//        return "환자가 증상 자가진단 설문에 다음과 같이 답했습니다:\n" +
+//                "1. 최근 1주일 내에 목이 아픈가요? " + ("Y".equals(answer.get("q1")) ? "예" : "아니오") + "\n" +
+//                "2. 발열(열이 남)이 있나요? " + ("Y".equals(answer.get("q2")) ? "예" : "아니오") + "\n" +
+//                "3. 코막힘/콧물이 있나요? " + ("Y".equals(answer.get("q3")) ? "예" : "아니오") + "\n" +
+//                "이 정보를 바탕으로, 의심되는 질환 및 조치사항을 간단하게 안내해줘. 100자 이내로.";
+//    }
 }
